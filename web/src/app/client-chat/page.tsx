@@ -11,6 +11,7 @@ export default function ClientChatEmbed() {
   const token = params.get('t') || (typeof window !== 'undefined' ? localStorage.getItem('xsourcing_token') || '' : '')
   const projectId = params.get('projectId') // For continuing from draft
   const assignClientId = params.get('clientId') // When used by advisor to create for a client
+  const nodeId = params.get('nodeId') // For linking back to roadmap node
   const mode = (params.get('mode') as 'project'|'idea'|null) || 'project'
 
   const [messages, setMessages] = useState<Message[]>([])
@@ -232,7 +233,7 @@ export default function ClientChatEmbed() {
         }
         if (data.complete && data.specification) {
           // Save the specification
-          await fetch(`${apiBase}/agent-ideas`, { 
+          const ideaResponse = await fetch(`${apiBase}/agent-ideas`, { 
             method: 'POST', 
             headers: { 
               'Content-Type': 'application/json', 
@@ -250,9 +251,13 @@ export default function ClientChatEmbed() {
               build_phases: data.specification.build_phases,
               projectId: mode === 'project' ? draftProjectId : null, // no draft linkage for idea-only
               assignClientId: assignClientId ? Number(assignClientId) : undefined,
+              nodeId: nodeId ? Number(nodeId) : undefined,
               mode
             }) 
           })
+          
+          const ideaData = await ideaResponse.json()
+          console.log('Agent idea saved:', ideaData)
           
           // Show completion message
           setTimeout(() => {
@@ -260,8 +265,13 @@ export default function ClientChatEmbed() {
               alert('Idea saved successfully!')
               window.parent.location.href = assignClientId ? '/advisor' : '/dashboard'
             } else {
-              alert('Project scope created successfully!')
-              window.parent.location.href = assignClientId ? '/advisor' : '/projects'
+              if (nodeId) {
+                alert('Project created and linked to your roadmap!')
+                window.parent.location.href = '/roadmap'
+              } else {
+                alert('Project scope created successfully!')
+                window.parent.location.href = assignClientId ? '/advisor' : '/projects'
+              }
             }
           }, 2000)
         }

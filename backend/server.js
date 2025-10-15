@@ -2409,7 +2409,7 @@ app.delete('/projects/:id/draft', auth(), async (req, res) => {
 app.post('/agent-ideas', auth(), async (req, res) => {
   try {
     const id = String(Date.now());
-    const { title, summary, steps = [], agent_stack = {}, client_requirements = [], implementation_estimate = null, security_considerations = null, future_enhancements = null, build_phases = null, projectId = null, assignClientId = null, mode = 'project' } = req.body || {};
+    const { title, summary, steps = [], agent_stack = {}, client_requirements = [], implementation_estimate = null, security_considerations = null, future_enhancements = null, build_phases = null, projectId = null, assignClientId = null, nodeId = null, mode = 'project' } = req.body || {};
     
     let finalProjectId = projectId;
     let ownerClientId = req.user.role === 'client' ? req.user.id : null;
@@ -2446,6 +2446,16 @@ app.post('/agent-ideas', auth(), async (req, res) => {
       'insert into agent_ideas(id, title, summary, steps, agent_stack, client_requirements, implementation_estimate, security_considerations, future_enhancements, build_phases, user_id, project_id) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)',
       [id, title, summary, JSON.stringify(steps), JSON.stringify(agent_stack), JSON.stringify(client_requirements), JSON.stringify(implementation_estimate), JSON.stringify(security_considerations), JSON.stringify(future_enhancements), JSON.stringify(build_phases), req.user.id, finalProjectId]
     );
+    
+    // Link the project back to the roadmap node if nodeId was provided
+    if (nodeId && finalProjectId) {
+      await pool.query(
+        'update roadmap_nodes set project_id = $1, status = $2 where id = $3',
+        [finalProjectId, 'in-progress', Number(nodeId)]
+      );
+      console.log(`Linked project ${finalProjectId} to roadmap node ${nodeId}`);
+    }
+    
     res.json({ ok: true, id, projectId: finalProjectId });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });

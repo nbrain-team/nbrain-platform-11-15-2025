@@ -7,12 +7,13 @@ export default function ChatPage() {
   const params = useMemo(() => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : ''), [])
   const projectId = params.get('projectId')
   const clientId = params.get('clientId')
+  const nodeId = params.get('nodeId')
 
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-white p-0 shadow-card">
       <iframe
         title="Agent Ideator"
-        src={`/client-chat?api=${encodeURIComponent(api)}${token ? `&t=${encodeURIComponent(token)}` : ''}${projectId ? `&projectId=${encodeURIComponent(projectId)}` : ''}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ''}`}
+        src={`/client-chat?api=${encodeURIComponent(api)}${token ? `&t=${encodeURIComponent(token)}` : ''}${projectId ? `&projectId=${encodeURIComponent(projectId)}` : ''}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ''}${nodeId ? `&nodeId=${encodeURIComponent(nodeId)}` : ''}`}
         className="h-[70vh] w-full rounded-xl"
       />
     </div>
