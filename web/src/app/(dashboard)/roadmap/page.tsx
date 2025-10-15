@@ -116,7 +116,6 @@ export default function RoadmapPage() {
             sourceHandle: edge.source_handle || undefined,
             targetHandle: edge.target_handle || undefined,
             type: 'smoothstep',
-            label: edge.label,
             animated: edge.is_critical,
             markerEnd: {
               type: MarkerType.ArrowClosed,
@@ -282,7 +281,7 @@ export default function RoadmapPage() {
           sourceHandle: connection.sourceHandle || null,
           targetHandle: connection.targetHandle || null,
           edgeType: 'dependency',
-          label: 'depends on',
+          label: '',
         }),
       })
       
