@@ -4027,7 +4027,7 @@ async function createDefaultEcosystem(userId) {
     
     // Create default category nodes matching the standard layout
     const defaultCategories = [
-      { name: 'The Brain', x: 600, y: 350, description: 'The Brain is your centralized AI intelligence — a smart, evolving core that powers every module within your ecosystem, both now and in the future. It acts as the AI backend that connects, coordinates, and amplifies all components of your system.\n\nThe Brain is fully owned by you, continuously learning and adapting with every interaction. It's designed to be completely portable, allowing you to take your intelligence anywhere — seamlessly integrated within nBrain or beyond it.', color: '#9333EA' },
+      { name: 'The Brain', x: 600, y: 350, description: 'The Brain is your centralized AI intelligence — a smart, evolving core that powers every module within your ecosystem, both now and in the future. It acts as the AI backend that connects, coordinates, and amplifies all components of your system.\n\nThe Brain is fully owned by you, continuously learning and adapting with every interaction. It\'s designed to be completely portable, allowing you to take your intelligence anywhere — seamlessly integrated within nBrain or beyond it.', color: '#9333EA' },
       // Left side categories
       { name: 'Sales', x: 350, y: 200, description: 'Sales AI initiatives', color: '#EC4899' },
       { name: 'Marketing', x: 350, y: 350, description: 'Marketing AI initiatives', color: '#F59E0B' },
