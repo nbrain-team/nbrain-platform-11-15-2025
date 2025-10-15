@@ -597,18 +597,23 @@ export default function AdvisorProjectDetailPage({ params }: { params: { id: str
         {tab==='scope' && (
         <div className="space-y-6">
           <div className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
-            <div className="flex items-center justify-between"><h3 className="text-lg font-semibold">Executive Summary</h3>{editingIdea.field !== 'summary' && <button className="btn-secondary px-3 py-1 text-xs" onClick={()=>startIdeaEdit('summary', idea.summary || '')}>Edit</button>}</div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold">Executive Summary</h3>
+              {editingIdea.field !== 'summary' && <button className="btn-secondary px-3 py-1 text-xs" onClick={()=>startIdeaEdit('summary', idea.summary || '')}>Edit</button>}
+            </div>
             {editingIdea.field === 'summary' ? (
               <div className="mt-2">
                 <textarea className="w-full rounded-md border border-[var(--color-border)] p-2 text-sm" rows={4} value={(ideaDraft as string) || ''} onChange={e=>setIdeaDraft(e.target.value)} />
                 <div className="mt-2 flex gap-2"><button className="btn-primary" onClick={saveIdeaEdit}>Save</button><button className="btn-secondary" onClick={cancelIdeaEdit}>Cancel</button></div>
               </div>
             ) : (
-              <p className="mt-2 text-[var(--color-text-muted)]">{idea.summary}</p>
+              <div className="prose max-w-none">
+                <p className="text-[var(--color-text-muted)] leading-relaxed">{idea.summary}</p>
+              </div>
             )}
           </div>
           <div className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
-            <div className="flex items-center justify-between"><h3 className="text-lg font-semibold">Detailed Implementation Plan</h3>{editingIdea.field !== 'steps' && <button className="btn-secondary px-3 py-1 text-xs" onClick={()=>startIdeaEdit('steps', idea.steps || [])}>Edit</button>}</div>
+            <div className="flex items-center justify-between"><h3 className="text-lg font-semibold">What This Module Will Do</h3>{editingIdea.field !== 'steps' && <button className="btn-secondary px-3 py-1 text-xs" onClick={()=>startIdeaEdit('steps', idea.steps || [])}>Edit</button>}</div>
             <div className="mt-3 space-y-3">
               {Array.isArray(idea.steps) && idea.steps.map((s, i) => {
                 const { title, body } = splitTitleBody(s)
