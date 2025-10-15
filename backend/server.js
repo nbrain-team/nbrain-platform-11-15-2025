@@ -3124,6 +3124,12 @@ app.post('/generate-company-description', auth('client'), async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Website URL is required' });
     }
     
+    // Check for Gemini API key
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ ok: false, error: 'AI service not configured' });
+    }
+    
     // Fetch the website homepage
     let websiteContent = '';
     try {
@@ -3159,7 +3165,8 @@ ${websiteContent}
 
 Provide only the description, no preamble.`;
     
-    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+    const genAI = new GoogleGenerativeAI(apiKey, { apiVersion: 'v1' });
+    const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp' });
     const result = await model.generateContent(prompt);
     const description = result.response.text().trim();
     
