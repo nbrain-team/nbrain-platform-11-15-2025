@@ -16,11 +16,24 @@ type RoadmapNode = {
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [roadmapNodes, setRoadmapNodes] = useState<RoadmapNode[]>([])
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<number>>(new Set())
   const api = process.env.NEXT_PUBLIC_API_BASE_URL || ""
   const authHeaders = useMemo<HeadersInit | undefined>(() => {
     const t = typeof window !== 'undefined' ? localStorage.getItem("xsourcing_token") : null
     return t ? { Authorization: `Bearer ${t}` } : undefined
   }, [])
+  
+  const toggleDescription = (nodeId: number) => {
+    setExpandedDescriptions(prev => {
+      const next = new Set(prev)
+      if (next.has(nodeId)) {
+        next.delete(nodeId)
+      } else {
+        next.add(nodeId)
+      }
+      return next
+    })
+  }
 
   useEffect(() => {
     (async () => {
@@ -154,25 +167,42 @@ export default function ProjectsPage() {
               No planned projects. Add a project node in your <a href="/roadmap" className="text-[var(--color-primary)] underline">AI Ecosystem</a>!
             </div>
           ) : (
-            roadmapNodes.filter(n => !n.project_id).map(node => (
-              <div key={node.id} className="grid grid-cols-3 items-center gap-4 p-4 text-sm hover:bg-[var(--color-surface-alt)] group">
-                <div className="font-medium text-[var(--color-text)]">
-                  {node.title}
+            roadmapNodes.filter(n => !n.project_id).map(node => {
+              const description = node.description || 'No description yet'
+              const isExpanded = expandedDescriptions.has(node.id)
+              const shouldTruncate = description.length > 133
+              const displayDescription = shouldTruncate && !isExpanded 
+                ? description.substring(0, 133) + '...'
+                : description
+              
+              return (
+                <div key={node.id} className="grid grid-cols-3 items-start gap-4 p-4 text-sm hover:bg-[var(--color-surface-alt)] group">
+                  <div className="font-medium text-[var(--color-text)]">
+                    {node.title}
+                  </div>
+                  <div className="text-[var(--color-text-muted)]">
+                    <span>{displayDescription}</span>
+                    {shouldTruncate && (
+                      <button
+                        onClick={() => toggleDescription(node.id)}
+                        className="ml-2 text-xs text-[var(--color-primary)] hover:underline font-medium"
+                      >
+                        {isExpanded ? 'Show less' : 'Show more'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="text-right flex gap-2 justify-end items-center">
+                    <span className="rounded-full px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700">Planned</span>
+                    <a 
+                      href={`/chat?projectName=${encodeURIComponent(node.title)}&nodeId=${node.id}`}
+                      className="rounded-md border border-[var(--color-primary)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-primary-700)] transition"
+                    >
+                      Scope with AI
+                    </a>
+                  </div>
                 </div>
-                <div className="text-[var(--color-text-muted)]">
-                  {node.description || 'No description yet'}
-                </div>
-                <div className="text-right flex gap-2 justify-end items-center">
-                  <span className="rounded-full px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700">Planned</span>
-                  <a 
-                    href={`/chat?projectName=${encodeURIComponent(node.title)}&nodeId=${node.id}`}
-                    className="rounded-md border border-[var(--color-primary)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-primary-700)] transition"
-                  >
-                    Scope with AI
-                  </a>
-                </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>
