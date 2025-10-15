@@ -151,13 +151,6 @@ export function RoadmapSidebar({ node, onClose, onDelete, onUpdate }: RoadmapSid
               </div>
             )}
 
-            {node.data.priority && (
-              <div>
-                <div className="text-xs font-medium text-[var(--color-text-muted)] mb-1">Priority</div>
-                <div className="text-sm font-medium text-[var(--color-text)]">{node.data.priority}</div>
-              </div>
-            )}
-
             {node.data.estimated_roi && (
               <div>
                 <div className="text-xs font-medium text-[var(--color-text-muted)] mb-1">Estimated ROI</div>
