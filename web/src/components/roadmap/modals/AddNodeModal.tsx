@@ -223,9 +223,9 @@ export function AddNodeModal({ onClose, onAdd }: AddNodeModalProps) {
                     className="text-xs text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1 disabled:opacity-50"
                   >
                     {generatingDescription ? (
-                      <>⏳ Generating...</>
+                      <>Generating...</>
                     ) : (
-                      <>✨ AI Generate</>
+                      <>AI Generate</>
                     )}
                   </button>
                 )}

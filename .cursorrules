@@ -20,6 +20,7 @@ Help the user deploy this clone as a completely separate project with:
 4. Help with database backup/restore process
 5. Set up environment variables correctly
 6. Verify deployment works
+7. NEVER use colorful emojis in any code, buttons, or UI elements - clean, professional text only
 
 ## Quick Commands User Might Say
 - "Help me deploy this" → Guide through full deployment

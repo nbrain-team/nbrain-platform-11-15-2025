@@ -196,9 +196,9 @@ export function RoadmapSidebar({ node, onClose, onDelete, onUpdate }: RoadmapSid
           {node.type === 'project' && !node.data.project_id && (
             <a 
               href={`/chat?projectName=${encodeURIComponent(node.data.title)}&nodeId=${node.id}`}
-              className="block w-full rounded-md border border-emerald-500 bg-emerald-500 px-4 py-2 text-center text-sm font-medium text-white hover:bg-emerald-600 transition"
+              className="block w-full rounded-md border border-[var(--color-primary)] bg-[var(--color-primary)] px-4 py-2 text-center text-sm font-medium text-white hover:bg-[var(--color-primary-700)] transition"
             >
-              🤖 Create Project with AI
+              Create Project with AI
             </a>
           )}
           

@@ -147,9 +147,9 @@ export default function ProjectsPage() {
                   <span className="rounded-full px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700">Planned</span>
                   <a 
                     href={`/chat?projectName=${encodeURIComponent(node.title)}&nodeId=${node.id}`}
-                    className="rounded-md border border-emerald-500 bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-600 transition"
+                    className="rounded-md border border-[var(--color-primary)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-primary-700)] transition"
                   >
-                    🤖 Scope with AI
+                    Scope with AI
                   </a>
                 </div>
               </div>
