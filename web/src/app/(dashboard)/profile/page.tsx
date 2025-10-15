@@ -10,6 +10,7 @@ type Me = {
   company_name?: string | null
   website_url?: string | null
   phone?: string | null
+  company_description?: string | null
 }
 
 type Credential = {
@@ -52,10 +53,13 @@ export default function ProfilePage() {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [username, setUsername] = useState("")
+  const [companyDescription, setCompanyDescription] = useState("")
+  const [websiteUrl, setWebsiteUrl] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
   const [saving, setSaving] = useState(false)
+  const [generatingCompanyDesc, setGeneratingCompanyDesc] = useState(false)
   const [advisor, setAdvisor] = useState<Advisor | null>(null)
   const [copySuccess, setCopySuccess] = useState("")
   
@@ -92,6 +96,8 @@ export default function ProfilePage() {
         setEmail(u.email || "")
         setPhone(u.phone || "")
         setUsername(u.username || "")
+        setCompanyDescription(u.company_description || "")
+        setWebsiteUrl(u.website_url || "")
         
         // Load credentials and advisor for client users
         if (u.role === 'client') {
@@ -135,7 +141,15 @@ export default function ProfilePage() {
         throw new Error("Passwords do not match")
       }
       
-      const body: { name: string; email: string; phone: string; companyName: string; username: string; password?: string } = { name, email, phone, companyName: company, username }
+      const body: { name: string; email: string; phone: string; companyName: string; username: string; websiteUrl: string; companyDescription: string; password?: string } = { 
+        name, 
+        email, 
+        phone, 
+        companyName: company, 
+        username,
+        websiteUrl,
+        companyDescription
+      }
       if (newPassword) {
         body.password = newPassword
       }
@@ -282,6 +296,33 @@ export default function ProfilePage() {
     }
   }
   
+  // Company description generation
+  const generateCompanyDescription = async () => {
+    if (!websiteUrl.trim()) {
+      setError('Please enter your website URL first')
+      return
+    }
+    
+    setGeneratingCompanyDesc(true)
+    try {
+      const res = await fetch(`${api}/generate-company-description`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(authHeaders || {}) },
+        body: JSON.stringify({ websiteUrl })
+      }).then(r => r.json())
+      
+      if (res.ok) {
+        setCompanyDescription(res.description)
+      } else {
+        setError(res.error || 'Failed to generate company description')
+      }
+    } catch (e: unknown) {
+      setError('Failed to generate company description')
+    } finally {
+      setGeneratingCompanyDesc(false)
+    }
+  }
+  
   // Systems management functions
   const generateSystemDescription = async () => {
     if (!newSystemName.trim()) {
@@ -418,6 +459,8 @@ export default function ProfilePage() {
                   <input className="rounded-md border border-[var(--color-border)] px-3 py-2" value={email} onChange={e=>setEmail(e.target.value)} />
                   <label className="text-[var(--color-text-muted)]">Phone</label>
                   <input className="rounded-md border border-[var(--color-border)] px-3 py-2" value={phone} onChange={e=>setPhone(e.target.value)} />
+                  <label className="text-[var(--color-text-muted)]">Website URL</label>
+                  <input className="rounded-md border border-[var(--color-border)] px-3 py-2" value={websiteUrl} onChange={e=>setWebsiteUrl(e.target.value)} placeholder="https://example.com" />
                 </div>
               </div>
               <div>
@@ -434,6 +477,49 @@ export default function ProfilePage() {
               </div>
             </div>
             <button onClick={save} disabled={saving} className="btn-primary mt-6">{saving ? 'Saving…' : 'Save'}</button>
+          </section>
+          
+          {/* Company Description Section */}
+          <section className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card mt-6">
+            <div className="mb-4">
+              <div className="text-lg font-semibold">Company Description</div>
+              <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                Tell AI agents about your company. This helps generate better, more personalized project recommendations.
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-text)]">About Your Company</label>
+                  {websiteUrl && (
+                    <button
+                      type="button"
+                      onClick={generateCompanyDescription}
+                      disabled={generatingCompanyDesc}
+                      className="text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-700)] font-medium disabled:opacity-50 transition"
+                    >
+                      {generatingCompanyDesc ? 'Analyzing Website...' : 'AI Generate from Website'}
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  className="w-full rounded-md border border-[var(--color-border)] px-4 py-3 text-sm"
+                  value={companyDescription}
+                  onChange={e => setCompanyDescription(e.target.value)}
+                  placeholder="Describe your company, products/services, and who you serve. Or click 'AI Generate from Website' to auto-fill based on your website."
+                  rows={5}
+                />
+                {!websiteUrl && (
+                  <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                    Tip: Add your website URL in Account Information above to enable AI generation
+                  </p>
+                )}
+              </div>
+              <button onClick={save} disabled={saving} className="btn-primary">
+                {saving ? 'Saving…' : 'Save Company Description'}
+              </button>
+            </div>
           </section>
 
           {/* Credentials Section */}

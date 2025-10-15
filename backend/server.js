@@ -1563,7 +1563,7 @@ app.post('/public/forgot-password', async (req, res) => {
 // Profile self endpoints
 app.get('/me', auth(), async (req, res) => {
   try {
-    const r = await pool.query('select id, role, name, email, username, company_name, website_url, phone from users where id=$1', [req.user.id]);
+    const r = await pool.query('select id, role, name, email, username, company_name, website_url, phone, company_description from users where id=$1', [req.user.id]);
     res.json({ ok: true, user: r.rows[0] });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
@@ -1572,7 +1572,7 @@ app.get('/me', auth(), async (req, res) => {
 
 app.put('/me', auth(), async (req, res) => {
   try {
-    const { name, email, username, companyName, websiteUrl, phone, password } = req.body || {};
+    const { name, email, username, companyName, websiteUrl, phone, password, companyDescription } = req.body || {};
     
     // Check if username is already taken by another user
     if (username && username !== req.user.username) {
@@ -1585,10 +1585,10 @@ app.put('/me', auth(), async (req, res) => {
     if (password) {
       // Update with new password (hash it first)
       const hashed = await bcrypt.hash(password, 10);
-      await pool.query('update users set name=coalesce($1,name), email=coalesce($2,email), username=coalesce($3,username), password=$4, company_name=coalesce($5,company_name), website_url=coalesce($6,website_url), phone=coalesce($7,phone) where id=$8', [name, email, username, hashed, companyName, websiteUrl, phone, req.user.id]);
+      await pool.query('update users set name=coalesce($1,name), email=coalesce($2,email), username=coalesce($3,username), password=$4, company_name=coalesce($5,company_name), website_url=coalesce($6,website_url), phone=coalesce($7,phone), company_description=coalesce($8,company_description) where id=$9', [name, email, username, hashed, companyName, websiteUrl, phone, companyDescription, req.user.id]);
     } else {
       // Update without changing password
-      await pool.query('update users set name=coalesce($1,name), email=coalesce($2,email), username=coalesce($3,username), company_name=coalesce($4,company_name), website_url=coalesce($5,website_url), phone=coalesce($6,phone) where id=$7', [name, email, username, companyName, websiteUrl, phone, req.user.id]);
+      await pool.query('update users set name=coalesce($1,name), email=coalesce($2,email), username=coalesce($3,username), company_name=coalesce($4,company_name), website_url=coalesce($5,website_url), phone=coalesce($6,phone), company_description=coalesce($7,company_description) where id=$8', [name, email, username, companyName, websiteUrl, phone, companyDescription, req.user.id]);
     }
     
     res.json({ ok: true });
@@ -3071,6 +3071,61 @@ app.post('/user-systems/generate-description', auth('client'), async (req, res) 
   } catch (e) {
     console.error('AI description generation error:', e);
     res.status(500).json({ ok: false, error: 'Failed to generate description' });
+  }
+});
+
+// AI generate company description from website
+app.post('/generate-company-description', auth('client'), async (req, res) => {
+  try {
+    const { websiteUrl } = req.body;
+    
+    if (!websiteUrl) {
+      return res.status(400).json({ ok: false, error: 'Website URL is required' });
+    }
+    
+    // Fetch the website homepage
+    let websiteContent = '';
+    try {
+      const response = await axios.get(websiteUrl, {
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; nBrain-Bot/1.0)'
+        }
+      });
+      websiteContent = response.data;
+      
+      // Extract text content from HTML (simple approach - remove tags)
+      websiteContent = websiteContent
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .substring(0, 5000); // Limit to first 5000 chars
+    } catch (e) {
+      console.error('Website fetch error:', e);
+      return res.status(400).json({ ok: false, error: 'Unable to fetch website. Please check the URL is correct and publicly accessible.' });
+    }
+    
+    // Use AI to generate company description based on website content
+    const prompt = `Based on this website content, provide a professional 2-3 sentence description of this company. Focus on:
+- What the company does
+- Their main products/services
+- Who they serve
+
+Website content:
+${websiteContent}
+
+Provide only the description, no preamble.`;
+    
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+    const result = await model.generateContent(prompt);
+    const description = result.response.text().trim();
+    
+    res.json({ ok: true, description });
+  } catch (e) {
+    console.error('Company description generation error:', e);
+    res.status(500).json({ ok: false, error: 'Failed to generate company description' });
   }
 });
 
