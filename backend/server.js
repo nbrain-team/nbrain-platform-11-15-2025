@@ -2972,6 +2972,108 @@ app.get('/credentials/:id/download', auth('client'), async (req, res) => {
   }
 });
 
+// ===========================
+// USER SYSTEMS ENDPOINTS
+// ===========================
+
+// Get user systems
+app.get('/user-systems', auth('client'), async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, name, description, credentials, created_at, updated_at FROM user_systems WHERE user_id = $1 ORDER BY name ASC',
+      [req.user.id]
+    );
+    res.json({ ok: true, systems: result.rows });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Add user system
+app.post('/user-systems', auth('client'), async (req, res) => {
+  try {
+    const { name, description, credentials } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ ok: false, error: 'System name is required' });
+    }
+    
+    const result = await pool.query(
+      'INSERT INTO user_systems (user_id, name, description, credentials) VALUES ($1, $2, $3, $4) RETURNING *',
+      [req.user.id, name, description || null, credentials || null]
+    );
+    
+    res.json({ ok: true, system: result.rows[0] });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Update user system
+app.put('/user-systems/:id', auth('client'), async (req, res) => {
+  try {
+    const systemId = Number(req.params.id);
+    const { name, description, credentials } = req.body;
+    
+    // Verify ownership
+    const owner = await pool.query('SELECT user_id FROM user_systems WHERE id = $1', [systemId]);
+    if (owner.rowCount === 0 || owner.rows[0].user_id !== req.user.id) {
+      return res.status(404).json({ ok: false, error: 'System not found' });
+    }
+    
+    await pool.query(
+      'UPDATE user_systems SET name = $1, description = $2, credentials = $3, updated_at = NOW() WHERE id = $4',
+      [name, description, credentials, systemId]
+    );
+    
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Delete user system
+app.delete('/user-systems/:id', auth('client'), async (req, res) => {
+  try {
+    const systemId = Number(req.params.id);
+    
+    const result = await pool.query(
+      'DELETE FROM user_systems WHERE id = $1 AND user_id = $2 RETURNING id',
+      [systemId, req.user.id]
+    );
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ ok: false, error: 'System not found' });
+    }
+    
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// AI generate system description
+app.post('/user-systems/generate-description', auth('client'), async (req, res) => {
+  try {
+    const { systemName } = req.body;
+    
+    if (!systemName) {
+      return res.status(400).json({ ok: false, error: 'System name is required' });
+    }
+    
+    const prompt = `Provide a brief 1-2 sentence description of the software/system called "${systemName}". Focus on what it does and its primary use case. Be concise and professional.`;
+    
+    const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+    const result = await model.generateContent(prompt);
+    const description = result.response.text().trim();
+    
+    res.json({ ok: true, description });
+  } catch (e) {
+    console.error('AI description generation error:', e);
+    res.status(500).json({ ok: false, error: 'Failed to generate description' });
+  }
+});
+
 // Project credentials endpoints
 // Get credentials linked to a project
 app.get('/projects/:projectId/credentials', auth(), async (req, res) => {

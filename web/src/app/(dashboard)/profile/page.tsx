@@ -22,6 +22,15 @@ type Credential = {
   created_at: string
 }
 
+type UserSystem = {
+  id: number
+  name: string
+  description?: string
+  credentials?: string
+  created_at: string
+  updated_at: string
+}
+
 type Advisor = {
   id: number
   name: string
@@ -59,6 +68,16 @@ export default function ProfilePage() {
   const [newCredentialType, setNewCredentialType] = useState<'text' | 'file'>('text')
   const [newCredentialValue, setNewCredentialValue] = useState("")
   const [newCredentialFile, setNewCredentialFile] = useState<File | null>(null)
+  
+  // Systems state
+  const [systems, setSystems] = useState<UserSystem[]>([])
+  const [showAddSystem, setShowAddSystem] = useState(false)
+  const [newSystemName, setNewSystemName] = useState("")
+  const [newSystemDescription, setNewSystemDescription] = useState("")
+  const [newSystemCredentials, setNewSystemCredentials] = useState("")
+  const [generatingDescription, setGeneratingDescription] = useState(false)
+  const [editingSystem, setEditingSystem] = useState<number | null>(null)
+  const [editSystemData, setEditSystemData] = useState<{name: string, description: string, credentials: string}>({name: '', description: '', credentials: ''})
 
   useEffect(() => {
     const load = async () => {
@@ -91,6 +110,12 @@ export default function ProfilePage() {
           const advisorRes = await fetch(`${api}/client/advisor`, { headers: authHeaders }).then(r => r.json())
           if (advisorRes.ok) {
             setAdvisor(advisorRes.advisor)
+          }
+          
+          // Load user systems
+          const systemsRes = await fetch(`${api}/user-systems`, { headers: authHeaders }).then(r => r.json())
+          if (systemsRes.ok) {
+            setSystems(systemsRes.systems)
           }
         }
       } catch (e: unknown) {
@@ -254,6 +279,102 @@ export default function ProfilePage() {
     } catch (e: unknown) {
       setError('Failed to copy to clipboard')
       setTimeout(() => setError(''), 2000)
+    }
+  }
+  
+  // Systems management functions
+  const generateSystemDescription = async () => {
+    if (!newSystemName.trim()) {
+      setError('Please enter a system name first')
+      return
+    }
+    
+    setGeneratingDescription(true)
+    try {
+      const res = await fetch(`${api}/user-systems/generate-description`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(authHeaders || {}) },
+        body: JSON.stringify({ systemName: newSystemName })
+      }).then(r => r.json())
+      
+      if (res.ok) {
+        setNewSystemDescription(res.description)
+      } else {
+        setError(res.error || 'Failed to generate description')
+      }
+    } catch (e: unknown) {
+      setError('Failed to generate description')
+    } finally {
+      setGeneratingDescription(false)
+    }
+  }
+  
+  const addSystem = async () => {
+    if (!newSystemName.trim()) {
+      setError('System name is required')
+      return
+    }
+    
+    try {
+      const res = await fetch(`${api}/user-systems`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(authHeaders || {}) },
+        body: JSON.stringify({
+          name: newSystemName,
+          description: newSystemDescription || null,
+          credentials: newSystemCredentials || null
+        })
+      }).then(r => r.json())
+      
+      if (!res.ok) throw new Error(res.error || 'Failed adding system')
+      
+      // Reload systems
+      const systemsRes = await fetch(`${api}/user-systems`, { headers: authHeaders }).then(r => r.json())
+      if (systemsRes.ok) {
+        setSystems(systemsRes.systems)
+      }
+      
+      // Reset form
+      setShowAddSystem(false)
+      setNewSystemName("")
+      setNewSystemDescription("")
+      setNewSystemCredentials("")
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed adding system')
+    }
+  }
+  
+  const deleteSystem = async (systemId: number) => {
+    if (!confirm('Are you sure you want to delete this system?')) return
+    
+    try {
+      const res = await fetch(`${api}/user-systems/${systemId}`, {
+        method: 'DELETE',
+        headers: authHeaders
+      }).then(r => r.json())
+      
+      if (!res.ok) throw new Error(res.error || 'Failed deleting system')
+      
+      setSystems(prev => prev.filter(s => s.id !== systemId))
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed deleting system')
+    }
+  }
+  
+  const saveSystemEdit = async (systemId: number) => {
+    try {
+      const res = await fetch(`${api}/user-systems/${systemId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(authHeaders || {}) },
+        body: JSON.stringify(editSystemData)
+      }).then(r => r.json())
+      
+      if (!res.ok) throw new Error(res.error || 'Failed updating system')
+      
+      setSystems(prev => prev.map(s => s.id === systemId ? {...s, ...editSystemData} : s))
+      setEditingSystem(null)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed updating system')
     }
   }
 
@@ -476,6 +597,178 @@ export default function ProfilePage() {
                   className="btn-secondary mt-4"
                 >
                   + Add Custom Credential
+                </button>
+              )}
+            </div>
+          </section>
+          
+          {/* Systems/Software Section */}
+          <section className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card mt-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <div className="text-lg font-semibold">Systems & Software</div>
+                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                  Add the systems and tools your team uses. This helps AI agents make better recommendations.
+                </p>
+              </div>
+              <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+                {systems.length} Systems
+              </span>
+            </div>
+            
+            <div className="space-y-3">
+              {systems.length === 0 && !showAddSystem && (
+                <div className="py-8 text-center text-[var(--color-text-muted)] border border-dashed border-[var(--color-border)] rounded-lg">
+                  No systems added yet. Click "Add System" to get started.
+                </div>
+              )}
+              
+              {systems.map(system => (
+                <div key={system.id} className="rounded-lg border border-[var(--color-border)] p-4 hover:bg-[var(--color-surface-alt)] transition">
+                  {editingSystem === system.id ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Name</label>
+                        <input
+                          className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                          value={editSystemData.name}
+                          onChange={e => setEditSystemData(prev => ({...prev, name: e.target.value}))}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Description</label>
+                        <textarea
+                          className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                          value={editSystemData.description}
+                          onChange={e => setEditSystemData(prev => ({...prev, description: e.target.value}))}
+                          rows={2}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Credentials</label>
+                        <input
+                          className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                          value={editSystemData.credentials}
+                          onChange={e => setEditSystemData(prev => ({...prev, credentials: e.target.value}))}
+                          placeholder="API keys, access info, etc."
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => saveSystemEdit(system.id)} className="btn-primary">Save</button>
+                        <button onClick={() => setEditingSystem(null)} className="btn-secondary">Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-[var(--color-text)]">{system.name}</h3>
+                        {system.description && (
+                          <p className="mt-1 text-sm text-[var(--color-text-muted)]">{system.description}</p>
+                        )}
+                        {system.credentials && (
+                          <div className="mt-2 text-xs text-[var(--color-text-muted)]">
+                            Credentials: {system.credentials}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => {
+                            setEditingSystem(system.id)
+                            setEditSystemData({
+                              name: system.name,
+                              description: system.description || '',
+                              credentials: system.credentials || ''
+                            })
+                          }}
+                          className="text-xs text-[var(--color-text)] hover:text-[var(--color-primary)] font-medium transition"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteSystem(system.id)}
+                          className="text-xs text-red-600 hover:text-red-700 font-medium"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              {showAddSystem && (
+                <div className="rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-primary-50)] p-4">
+                  <h3 className="font-semibold text-[var(--color-text)] mb-3">Add New System</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">
+                        System Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                        value={newSystemName}
+                        onChange={e => setNewSystemName(e.target.value)}
+                        placeholder="e.g., Salesforce, Asana, Google Workspace"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-medium text-[var(--color-text-muted)]">Description</label>
+                        {newSystemName && (
+                          <button
+                            type="button"
+                            onClick={generateSystemDescription}
+                            disabled={generatingDescription}
+                            className="text-xs text-[var(--color-primary)] hover:text-[var(--color-primary-700)] font-medium disabled:opacity-50"
+                          >
+                            {generatingDescription ? 'Generating...' : 'AI Generate'}
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                        value={newSystemDescription}
+                        onChange={e => setNewSystemDescription(e.target.value)}
+                        placeholder="What does this system do? (optional)"
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Credentials</label>
+                      <input
+                        className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                        value={newSystemCredentials}
+                        onChange={e => setNewSystemCredentials(e.target.value)}
+                        placeholder="API keys, access details, etc. (optional)"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={addSystem} disabled={!newSystemName.trim()} className="btn-primary">
+                        Add System
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowAddSystem(false)
+                          setNewSystemName("")
+                          setNewSystemDescription("")
+                          setNewSystemCredentials("")
+                        }}
+                        className="btn-secondary"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {!showAddSystem && (
+                <button
+                  onClick={() => setShowAddSystem(true)}
+                  className="btn-secondary mt-4"
+                >
+                  + Add System
                 </button>
               )}
             </div>
