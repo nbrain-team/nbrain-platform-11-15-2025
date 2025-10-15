@@ -56,9 +56,9 @@ export default function RoadmapPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [roadmapData, setRoadmapData] = useState<{ nodes: RoadmapNode[], edges: RoadmapEdge[] }>({ nodes: [], edges: [] })
   
-  const authHeaders = useMemo<HeadersInit | undefined>(() => {
+  const authHeaders = useMemo<HeadersInit>(() => {
     const t = typeof window !== 'undefined' ? localStorage.getItem("xsourcing_token") : null
-    return t ? { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' } : undefined
+    return t ? { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' }
   }, [])
 
   // Custom node types
@@ -144,17 +144,34 @@ export default function RoadmapPage() {
         clearTimeout(timeout)
         timeout = setTimeout(async () => {
           try {
-            const positions = nodesToSave.map(n => ({
-              id: Number(n.id),
-              positionX: n.position.x,
-              positionY: n.position.y,
-            }))
+            // Filter out nodes without IDs (temporary nodes) and map to positions
+            const positions = nodesToSave
+              .filter(n => n && n.id && !n.id.startsWith('temp-'))
+              .map(n => ({
+                id: Number(n.id),
+                positionX: n.position.x,
+                positionY: n.position.y,
+              }))
             
-            await fetch(`${api}/roadmap/bulk-update-positions`, {
+            if (positions.length === 0) {
+              console.log('No valid positions to save')
+              return
+            }
+            
+            console.log('Bulk saving positions for', positions.length, 'nodes')
+            
+            const res = await fetch(`${api}/roadmap/bulk-update-positions`, {
               method: 'POST',
               headers: authHeaders,
               body: JSON.stringify({ nodes: positions }),
             })
+            
+            if (!res.ok) {
+              const errorText = await res.text()
+              console.error('Bulk position save failed:', res.status, errorText)
+            } else {
+              console.log('Positions saved successfully')
+            }
           } catch (e) {
             console.error('Failed to save positions:', e)
           }
@@ -166,8 +183,15 @@ export default function RoadmapPage() {
 
   // Handle node drag end - save position
   const handleNodeDragStop = useCallback(async (_event: unknown, node: Node) => {
+    if (!node || !node.id) {
+      console.error('Invalid node data:', node)
+      return
+    }
+    
     try {
-      await fetch(`${api}/roadmap/nodes/${node.id}`, {
+      console.log('Saving node position:', { id: node.id, x: node.position.x, y: node.position.y })
+      
+      const res = await fetch(`${api}/roadmap/nodes/${node.id}`, {
         method: 'PUT',
         headers: authHeaders,
         body: JSON.stringify({
@@ -175,6 +199,13 @@ export default function RoadmapPage() {
           positionY: node.position.y,
         }),
       })
+      
+      if (!res.ok) {
+        const errorText = await res.text()
+        console.error('Failed to save position, status:', res.status, errorText)
+      } else {
+        console.log('Position saved successfully')
+      }
     } catch (e) {
       console.error('Failed to save node position:', e)
     }
