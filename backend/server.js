@@ -1851,7 +1851,11 @@ If you're unsure about any technical details, just let me know and I'll recommen
       specContents.push({ role: 'user', parts: [{ text: String(message) }] });
       
       // If user used /done/, add a note to work with incomplete information
-      const specPrompt = `Based on our conversation, generate a comprehensive agent specification in JSON format${isDoneCommand ? '. The user has requested immediate specification generation, so make intelligent assumptions based on best practices and industry standards for any missing information' : ''}. ${maxDetail ? 'Maximize detail in every section with multi-level headings, examples, tables, and diagrams.' : 'Be thorough but concise.'} Use tables where helpful. with these sections:
+      const specPrompt = `Based on our conversation, generate a comprehensive agent specification in JSON format${isDoneCommand ? '. The user has requested immediate specification generation, so make intelligent assumptions based on best practices and industry standards for any missing information' : ''}. ${maxDetail ? 'Maximize detail in every section with multi-level headings, examples, tables, and diagrams.' : 'Be thorough but concise.'} Use tables where helpful.
+
+${companyContext ? companyContext + '\nIMPORTANT: Use this company context to personalize the specification. Recommend integrations with their existing systems, align with their business model, and reference their company in examples.\n' : ''}
+
+Generate the specification with these sections:
 
 {
     "title": "Descriptive agent name",
