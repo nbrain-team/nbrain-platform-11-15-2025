@@ -6,26 +6,33 @@ import remarkGfm from 'remark-gfm'
 type Message = { role: 'user' | 'assistant'; content: string }
 
 export default function ClientChatEmbed() {
-  // Use state to ensure params are read after component mounts
-  const [params, setParams] = useState<URLSearchParams | null>(null)
-  
-  useEffect(() => {
+  // Read params with proper client-side initialization
+  const [params] = useState(() => {
     if (typeof window !== 'undefined') {
-      setParams(new URLSearchParams(window.location.search))
+      return new URLSearchParams(window.location.search)
     }
-  }, [])
+    return new URLSearchParams()
+  })
   
-  const apiBase = params?.get('api') || process.env.NEXT_PUBLIC_API_BASE_URL || ''
-  const token = params?.get('t') || (typeof window !== 'undefined' ? localStorage.getItem('xsourcing_token') || '' : '')
-  const projectId = params?.get('projectId') || null // For continuing from draft
-  const assignClientId = params?.get('clientId') || null // When used by advisor to create for a client
-  const nodeId = params?.get('nodeId') || null // For linking back to roadmap node
-  const mode = (params?.get('mode') as 'project'|'idea'|null) || 'project'
+  const apiBase = params.get('api') || process.env.NEXT_PUBLIC_API_BASE_URL || ''
+  const token = params.get('t') || (typeof window !== 'undefined' ? localStorage.getItem('xsourcing_token') || '' : '')
+  const projectId = params.get('projectId') // For continuing from draft
+  const assignClientId = params.get('clientId') // When used by advisor to create for a client
+  const nodeId = params.get('nodeId') // For linking back to roadmap node
+  const mode = (params.get('mode') as 'project'|'idea'|null) || 'project'
   
-  // Debug logging
+  // Debug logging - run once on mount
   useEffect(() => {
-    console.log('client-chat params:', { nodeId, projectId, assignClientId, mode, fullUrl: typeof window !== 'undefined' ? window.location.href : '', searchParams: typeof window !== 'undefined' ? window.location.search : '' })
-  }, [nodeId, projectId, assignClientId, mode])
+    console.log('client-chat params AFTER mount:', { 
+      nodeId, 
+      projectId, 
+      assignClientId, 
+      mode, 
+      fullUrl: window.location.href,
+      searchParams: window.location.search,
+      allParams: Object.fromEntries(params.entries())
+    })
+  }, [])
 
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
