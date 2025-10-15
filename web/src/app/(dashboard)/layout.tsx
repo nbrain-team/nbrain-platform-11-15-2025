@@ -29,7 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="flex flex-col justify-between border-r border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4">
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/hyah-logo.png" alt="Hyah! AI" className="mb-6 w-auto" style={{ height: '50px' }} />
+          <img src="/hyah-logo.png" alt="nBrain" className="mb-6 w-auto" style={{ height: '34px', objectFit: 'contain' }} />
           <nav className="space-y-2 text-sm">
           <Link className="block rounded-md px-3 py-2 hover:bg-white" href={role === 'admin' ? '/admin' : role === 'advisor' ? '/advisor' : '/dashboard'}>Dashboard</Link>
           {role === 'client' && (
