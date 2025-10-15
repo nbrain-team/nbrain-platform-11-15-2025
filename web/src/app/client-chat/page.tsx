@@ -13,6 +13,9 @@ export default function ClientChatEmbed() {
   const assignClientId = params.get('clientId') // When used by advisor to create for a client
   const nodeId = params.get('nodeId') // For linking back to roadmap node
   const mode = (params.get('mode') as 'project'|'idea'|null) || 'project'
+  
+  // Debug logging
+  console.log('client-chat params:', { nodeId, projectId, assignClientId, mode, fullUrl: typeof window !== 'undefined' ? window.location.href : '' })
 
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
