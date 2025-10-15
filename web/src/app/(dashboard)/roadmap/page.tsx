@@ -85,6 +85,12 @@ export default function RoadmapPage() {
         if (data.ok && data.roadmap) {
           setRoadmapData(data.roadmap)
           
+          console.log('Loaded roadmap:', {
+            nodes: data.roadmap.nodes.length,
+            edges: data.roadmap.edges.length,
+            edgeDetails: data.roadmap.edges
+          })
+          
           // Convert database nodes to React Flow nodes
           const flowNodes: Node[] = data.roadmap.nodes.map((node: RoadmapNode) => ({
             id: String(node.id),
@@ -113,6 +119,7 @@ export default function RoadmapPage() {
             },
           }))
           
+          console.log('Setting React Flow edges:', flowEdges)
           setNodes(flowNodes)
           setEdges(flowEdges)
         }
@@ -195,7 +202,22 @@ export default function RoadmapPage() {
 
   // Handle connection creation
   const onConnect = useCallback(async (connection: Connection) => {
-    if (!connection.source || !connection.target) return
+    if (!connection.source || !connection.target) {
+      console.log('Connection missing source or target')
+      return
+    }
+    
+    console.log('Creating edge connection:', connection)
+    
+    // Optimistically add the edge to UI first
+    const tempEdge = {
+      ...connection,
+      id: `temp-${Date.now()}`,
+      type: 'smoothstep',
+      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { strokeWidth: 2, stroke: '#6B7280' },
+    }
+    setEdges((eds) => addEdge(tempEdge, eds))
     
     try {
       const res = await fetch(`${api}/roadmap/edges`, {
@@ -209,17 +231,32 @@ export default function RoadmapPage() {
         }),
       })
       
+      if (!res.ok) {
+        console.error('Edge creation failed with status:', res.status)
+        const errorText = await res.text()
+        console.error('Error response:', errorText)
+        alert('Failed to save connection. Please try again.')
+        // Remove the temporary edge
+        setEdges((eds) => eds.filter(e => e.id !== tempEdge.id))
+        return
+      }
+      
       const data = await res.json()
-      if (data.ok) {
-        setEdges((eds) => addEdge({
-          ...connection,
-          id: String(data.edge.id),
-          type: 'smoothstep',
-          markerEnd: { type: MarkerType.ArrowClosed },
-        }, eds))
+      console.log('Edge created successfully:', data)
+      
+      if (data.ok && data.edge) {
+        // Replace temp edge with real one from backend
+        setEdges((eds) => eds.map(e => 
+          e.id === tempEdge.id 
+            ? { ...e, id: String(data.edge.id) }
+            : e
+        ))
       }
     } catch (e) {
       console.error('Failed to create edge:', e)
+      alert('Failed to save connection. Please check your internet connection.')
+      // Remove the temporary edge
+      setEdges((eds) => eds.filter(e => e.id !== tempEdge.id))
     }
   }, [api, authHeaders, setEdges])
 
@@ -367,6 +404,13 @@ export default function RoadmapPage() {
             fitView={nodes.length === 0}
             fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
             attributionPosition="bottom-left"
+            defaultEdgeOptions={{
+              type: 'smoothstep',
+              markerEnd: { type: MarkerType.ArrowClosed },
+              style: { strokeWidth: 2, stroke: '#6B7280' }
+            }}
+            connectionLineType="smoothstep"
+            connectionLineStyle={{ strokeWidth: 2, stroke: '#6B7280' }}
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
             <Controls />
