@@ -4714,11 +4714,33 @@ app.post('/roadmap/ai-description', auth(), async (req, res) => {
       return res.status(500).json({ ok: false, error: 'AI service not configured' });
     }
     
+    // Fetch user's company context for personalization
+    let companyContext = '';
+    try {
+      const userProfile = await pool.query(
+        'SELECT company_name, company_description FROM users WHERE id = $1',
+        [req.user.id]
+      );
+      
+      if (userProfile.rowCount > 0) {
+        const profile = userProfile.rows[0];
+        if (profile.company_name || profile.company_description) {
+          companyContext = '\n\nCOMPANY CONTEXT:\n';
+          if (profile.company_name) companyContext += `Company: ${profile.company_name}\n`;
+          if (profile.company_description) companyContext += `About: ${profile.company_description}\n`;
+          companyContext += '\nMake the description specifically relevant to this company and their business.';
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching company context:', e);
+      // Non-fatal - continue without context
+    }
+    
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp' });
     
     const typeContext = nodeType === 'project' ? 'AI project' : nodeType === 'subcategory' ? 'business sub-category' : 'initiative';
-    const prompt = `Generate a professional 3-4 sentence description for this ${typeContext} titled "${title}". The description should explain what this ${typeContext} involves and its potential business value. Keep it concise and strategic.`;
+    const prompt = `Generate a professional 3-4 sentence description for this ${typeContext} titled "${title}". The description should explain what this ${typeContext} involves and its potential business value. Keep it concise and strategic.${companyContext}`;
     
     const result = await model.generateContent(prompt);
     const description = result.response.text().trim();
