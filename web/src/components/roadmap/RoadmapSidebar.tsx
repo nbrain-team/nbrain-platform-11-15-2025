@@ -102,15 +102,17 @@ export function RoadmapSidebar({ node, onClose, onDelete, onUpdate }: RoadmapSid
                 className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Description</label>
-              <textarea
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
-                rows={4}
-              />
-            </div>
+            {node.type !== 'category' && node.type !== 'subcategory' && (
+              <div>
+                <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">Description</label>
+                <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                  rows={4}
+                />
+              </div>
+            )}
             <div className="flex gap-2">
               <button
                 onClick={handleSaveEdit}
@@ -137,7 +139,7 @@ export function RoadmapSidebar({ node, onClose, onDelete, onUpdate }: RoadmapSid
               <h4 className="text-lg font-semibold text-[var(--color-text)]">{node.data.title || node.data.name}</h4>
             </div>
 
-            {node.data.description && (
+            {node.data.description && node.type !== 'category' && node.type !== 'subcategory' && (
               <div>
                 <p className="text-sm text-[var(--color-text-muted)]">{node.data.description}</p>
               </div>
@@ -147,7 +149,7 @@ export function RoadmapSidebar({ node, onClose, onDelete, onUpdate }: RoadmapSid
 
         {!isEditing && (
           <>
-            {node.data.status && (
+            {node.data.status && node.type !== 'category' && node.type !== 'subcategory' && (
               <div>
                 <div className="text-xs font-medium text-[var(--color-text-muted)] mb-1">Status</div>
                 <div className="text-sm font-medium text-[var(--color-text)]">{node.data.status}</div>
