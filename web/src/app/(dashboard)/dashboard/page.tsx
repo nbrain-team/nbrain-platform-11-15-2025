@@ -5,9 +5,18 @@ import { ScheduleMeetingDialog } from "@/components/ScheduleMeetingDialog"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
 type Project = { id: number; name: string; status: string; eta: string | null }
+type RoadmapNode = { 
+  id: number
+  node_type: string
+  title: string
+  description: string
+  status: string
+  project_id: number | null
+}
 
 export default function DashboardOverview() {
   const [projects, setProjects] = useState<Project[]>([])
+  const [roadmapNodes, setRoadmapNodes] = useState<RoadmapNode[]>([])
   const [ideas, setIdeas] = useState<Array<{ id: string; title: string; summary: string }>>([])
   const api = process.env.NEXT_PUBLIC_API_BASE_URL || ""
   const authHeaders = useMemo<HeadersInit | undefined>(() => {
@@ -60,6 +69,14 @@ export default function DashboardOverview() {
       try {
         const res = await fetch(`${api}/client/projects`, { headers: authHeaders }).then(r => r.json())
         if (res?.ok && Array.isArray(res.projects)) setProjects(res.projects)
+        
+        // Fetch roadmap nodes
+        const roadmapRes = await fetch(`${api}/roadmap`, { headers: authHeaders }).then(r => r.json())
+        if (roadmapRes?.ok && roadmapRes.roadmap?.nodes) {
+          const projectNodes = roadmapRes.roadmap.nodes.filter((n: RoadmapNode) => n.node_type === 'project')
+          setRoadmapNodes(projectNodes)
+        }
+        
         const ir = await fetch(`${api}/client/ideas`, { headers: authHeaders }).then(r=>r.json()).catch(()=>null)
         if (ir && ir.ok && Array.isArray(ir.ideas)) setIdeas(ir.ideas)
         const wr = await fetch(`${api}/client/webinars`, { headers: authHeaders }).then(r=>r.json()).catch(()=>null)
@@ -81,7 +98,10 @@ export default function DashboardOverview() {
     }
   }, [])
 
-  const inProduction = projects.filter(p => p.status !== 'Completed')
+  const projectsInProduction = projects.filter(p => p.status === 'In production')
+  const scopedProjects = roadmapNodes.filter(n => n.project_id)
+  const plannedProjects = roadmapNodes.filter(n => !n.project_id)
+  
   const statusLabel = (s: string) => s
   const statusPercent = (s: string) => {
     switch (s) {
@@ -153,35 +173,114 @@ export default function DashboardOverview() {
         )}
       </section>
 
+      {/* Projects in Production */}
       <section className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
-        <div className="-mx-6 -mt-6 border-b border-[var(--color-border)] p-4 text-lg font-semibold">Projects In Production</div>
-        <div className="grid grid-cols-3 items-center gap-4 border-b border-[var(--color-border)] p-3 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
-          <div>Project</div>
-          <div>Progress</div>
-          <div className="text-right">ETA</div>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">Projects in Production</h2>
+            <p className="text-sm text-[var(--color-text-muted)]">Active projects currently being developed</p>
+          </div>
+          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+            {projectsInProduction.length} Active
+          </span>
         </div>
-        <ul className="divide-y">
-          {inProduction.length === 0 ? (
-            <li className="p-4">
-              <div className="text-sm text-[var(--color-text-muted)]">
-                No projects in production. <a className="text-[var(--color-primary)] underline" href="/chat">Click Here</a> to use our AI project assistant or use our <ScheduleMeetingDialog buttonText="Online Scheduler" buttonClass="text-[var(--color-primary)] underline p-0 bg-transparent border-0 rounded-none inline" /> for a complementary strategy call with your advisor.
-              </div>
-            </li>
-          ) : inProduction.map(p => (
-            <li key={p.id}>
-              <a href={`/projects/${encodeURIComponent(`PRJ-${String(p.id).padStart(4,'0')}`)}`} className="grid grid-cols-3 items-center gap-4 p-3 transition hover:bg-[var(--color-surface-alt)]">
-                <div className="font-medium">{p.name}</div>
-                <div className="flex items-center gap-3">
-                  <div className="h-2 w-56 flex-none shrink-0 rounded bg-[var(--color-surface-alt)]">
-                    <div className="h-2 rounded bg-[var(--color-primary)]" style={{ width: `${statusPercent(p.status)}%` }} />
+        <div className="divide-y">
+          {projectsInProduction.length === 0 ? (
+            <div className="py-8 text-center text-[var(--color-text-muted)]">
+              No Projects in Production
+            </div>
+          ) : (
+            projectsInProduction.map(p => (
+              <div key={p.id} className="grid grid-cols-3 items-center gap-4 p-4 text-sm hover:bg-[var(--color-surface-alt)]">
+                <a href={`/projects/PRJ-${String(p.id).padStart(4,'0')}`} className="font-medium text-[var(--color-text)]">
+                  {p.name.replace(/^Draft:\s*/i,'')}
+                </a>
+                <div className="flex items-center gap-3 text-[var(--color-text-muted)]">
+                  <div className="h-2 w-40 rounded bg-[var(--color-surface-alt)]">
+                    <div className="h-2 rounded bg-blue-500" style={{ width: '60%' }} />
                   </div>
-                  <span className="text-xs text-[var(--color-text-muted)] whitespace-nowrap w-40 truncate overflow-hidden flex-none shrink-0">{statusLabel(p.status)}</span>
+                  <span className="text-xs">{p.status}</span>
                 </div>
-                <div className="text-right text-sm text-[var(--color-text-muted)]">{p.eta || '-'}</div>
-              </a>
-            </li>
-          ))}
-        </ul>
+                <div className="text-right">
+                  <span className="rounded-full px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700">Active</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+      
+      {/* Scoped Projects */}
+      <section className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">Scoped Projects</h2>
+            <p className="text-sm text-[var(--color-text-muted)]">Projects with AI specifications ready for development</p>
+          </div>
+          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+            {scopedProjects.length} Projects
+          </span>
+        </div>
+        <div className="divide-y">
+          {scopedProjects.length === 0 ? (
+            <div className="py-8 text-center text-[var(--color-text-muted)]">
+              No scoped projects yet. <a href="/roadmap" className="text-[var(--color-primary)] underline">Add a project</a> to your AI Ecosystem!
+            </div>
+          ) : (
+            scopedProjects.map(node => (
+              <div key={node.id} className="grid grid-cols-3 items-center gap-4 p-4 text-sm hover:bg-[var(--color-surface-alt)]">
+                <a href={`/projects/PRJ-${String(node.project_id).padStart(4,'0')}`} className="font-medium text-[var(--color-text)]">
+                  {node.title}
+                </a>
+                <div className="text-[var(--color-text-muted)]">
+                  PRJ-{String(node.project_id).padStart(4,'0')}
+                </div>
+                <div className="text-right">
+                  <span className="rounded-full px-3 py-1 text-xs font-semibold bg-emerald-100 text-emerald-700">Scoped</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+      
+      {/* Planned Projects */}
+      <section className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">Planned Projects</h2>
+            <p className="text-sm text-[var(--color-text-muted)]">Ideas waiting to be scoped</p>
+          </div>
+          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+            {plannedProjects.length} Ideas
+          </span>
+        </div>
+        <div className="divide-y">
+          {plannedProjects.length === 0 ? (
+            <div className="py-8 text-center text-[var(--color-text-muted)]">
+              No planned projects. <a href="/roadmap" className="text-[var(--color-primary)] underline">Add one</a> to your AI Ecosystem!
+            </div>
+          ) : (
+            plannedProjects.map(node => (
+              <div key={node.id} className="grid grid-cols-3 items-center gap-4 p-4 text-sm hover:bg-[var(--color-surface-alt)]">
+                <div className="font-medium text-[var(--color-text)]">
+                  {node.title}
+                </div>
+                <div className="text-[var(--color-text-muted)]">
+                  {node.description ? node.description.substring(0, 50) + (node.description.length > 50 ? '...' : '') : 'No description'}
+                </div>
+                <div className="text-right">
+                  <a 
+                    href={`/chat?projectName=${encodeURIComponent(node.title)}&nodeId=${node.id}`}
+                    className="rounded-md border border-[var(--color-primary)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-primary-700)] transition"
+                  >
+                    Scope with AI
+                  </a>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </section>
 
       {/* Live Learning Sessions */}
