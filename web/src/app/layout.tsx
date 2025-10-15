@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hyah AI",
-  description: "Advisor-led AI production. Instantly adopt AI with Hyah! AI.",
+  title: "nBrain",
+  description: "Advisor-led AI production. Instantly adopt AI with nBrain.",
 };
 
 export default function RootLayout({
