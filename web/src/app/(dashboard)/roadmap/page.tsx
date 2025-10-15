@@ -76,20 +76,19 @@ export default function RoadmapPage() {
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
-  // Load roadmap data
-  useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true)
-        console.log('Loading roadmap from:', `${api}/roadmap`)
-        console.log('Auth headers:', authHeaders ? 'Present' : 'Missing')
-        
-        const res = await fetch(`${api}/roadmap`, { headers: authHeaders })
-        const data = await res.json()
-        
-        console.log('Roadmap API response:', data)
-        
-        if (data.ok && data.roadmap) {
+  // Function to load roadmap data
+  const loadRoadmap = useCallback(async () => {
+    try {
+      setLoading(true)
+      console.log('Loading roadmap from:', `${api}/roadmap`)
+      console.log('Auth headers:', authHeaders ? 'Present' : 'Missing')
+      
+      const res = await fetch(`${api}/roadmap`, { headers: authHeaders })
+      const data = await res.json()
+      
+      console.log('Roadmap API response:', data)
+      
+      if (data.ok && data.roadmap) {
           setRoadmapData(data.roadmap)
           
           console.log('Loaded roadmap:', {
@@ -132,13 +131,27 @@ export default function RoadmapPage() {
           setNodes(flowNodes)
           setEdges(flowEdges)
         }
-      } catch (e) {
-        console.error('Failed to load roadmap:', e)
-      } finally {
-        setLoading(false)
-      }
-    })()
+    } catch (e) {
+      console.error('Failed to load roadmap:', e)
+    } finally {
+      setLoading(false)
+    }
   }, [api, authHeaders, setNodes, setEdges])
+
+  // Load roadmap data on mount
+  useEffect(() => {
+    loadRoadmap()
+  }, [loadRoadmap])
+  
+  // Reload when returning from chat (check URL param)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('refresh') === 'true') {
+      loadRoadmap()
+      // Clean up URL
+      window.history.replaceState({}, '', '/roadmap')
+    }
+  }, [])
 
   // Debounced position saver
   const savePositionsDebounced = useCallback(
@@ -464,7 +477,9 @@ export default function RoadmapPage() {
             <MiniMap 
               nodeColor={(node) => {
                 switch (node.type) {
-                  case 'project': return '#10B981'
+                  case 'project': 
+                    // Scoped projects (green) vs Planned projects (blue)
+                    return node.data?.project_id ? '#10B981' : '#3B82F6'
                   case 'idea': return '#8B5CF6'
                   case 'department': return '#3B82F6'
                   case 'category': return '#9333EA'

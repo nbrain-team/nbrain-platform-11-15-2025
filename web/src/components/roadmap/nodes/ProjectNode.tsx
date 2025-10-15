@@ -2,6 +2,10 @@ import { memo } from 'react'
 import { Handle, Position, NodeProps } from 'reactflow'
 
 export const ProjectNode = memo(({ data }: NodeProps) => {
+  // Determine if this is a scoped project (has project_id) or planned (no project_id)
+  const isScoped = !!data.project_id
+  const nodeColor = isScoped ? 'emerald' : 'blue'
+  
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-300'
@@ -13,19 +17,34 @@ export const ProjectNode = memo(({ data }: NodeProps) => {
   }
 
   return (
-    <div className="rounded-lg border border-emerald-400 bg-white shadow-md" style={{ minWidth: 220 }}>
+    <div 
+      className={`rounded-lg border bg-white shadow-md ${
+        isScoped ? 'border-emerald-400' : 'border-blue-400'
+      }`} 
+      style={{ minWidth: 220 }}
+    >
       {/* All 4 sides have target handles */}
-      <Handle type="target" position={Position.Top} id="target-top" className="!bg-emerald-500 !w-2 !h-2" style={{ top: '-4px' }} />
-      <Handle type="target" position={Position.Left} id="target-left" className="!bg-emerald-500 !w-2 !h-2" style={{ left: '-4px' }} />
-      <Handle type="target" position={Position.Right} id="target-right" className="!bg-emerald-500 !w-2 !h-2" style={{ right: '-4px' }} />
-      <Handle type="target" position={Position.Bottom} id="target-bottom" className="!bg-emerald-500 !w-2 !h-2" style={{ bottom: '-4px' }} />
+      <Handle type="target" position={Position.Top} id="target-top" className={`!w-2 !h-2 ${isScoped ? '!bg-emerald-500' : '!bg-blue-500'}`} style={{ top: '-4px' }} />
+      <Handle type="target" position={Position.Left} id="target-left" className={`!w-2 !h-2 ${isScoped ? '!bg-emerald-500' : '!bg-blue-500'}`} style={{ left: '-4px' }} />
+      <Handle type="target" position={Position.Right} id="target-right" className={`!w-2 !h-2 ${isScoped ? '!bg-emerald-500' : '!bg-blue-500'}`} style={{ right: '-4px' }} />
+      <Handle type="target" position={Position.Bottom} id="target-bottom" className={`!w-2 !h-2 ${isScoped ? '!bg-emerald-500' : '!bg-blue-500'}`} style={{ bottom: '-4px' }} />
       
-      <div className="rounded-t-lg bg-emerald-50 px-4 py-2 border-b border-emerald-200">
+      <div className={`rounded-t-lg px-4 py-2 border-b ${
+        isScoped 
+          ? 'bg-emerald-50 border-emerald-200' 
+          : 'bg-blue-50 border-blue-200'
+      }`}>
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded bg-emerald-500 text-xs font-bold text-white">
-            P
+          <div className={`flex h-6 w-6 items-center justify-center rounded text-xs font-bold text-white ${
+            isScoped ? 'bg-emerald-500' : 'bg-blue-500'
+          }`}>
+            {isScoped ? 'S' : 'P'}
           </div>
-          <span className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Project</span>
+          <span className={`text-xs font-semibold uppercase tracking-wide ${
+            isScoped ? 'text-emerald-700' : 'text-blue-700'
+          }`}>
+            {isScoped ? 'Scoped' : 'Planned'}
+          </span>
         </div>
       </div>
       
@@ -50,10 +69,10 @@ export const ProjectNode = memo(({ data }: NodeProps) => {
       </div>
       
       {/* All 4 sides have source handles */}
-      <Handle type="source" position={Position.Top} id="source-top" className="!bg-emerald-500 !w-2 !h-2" style={{ top: '-4px' }} />
-      <Handle type="source" position={Position.Left} id="source-left" className="!bg-emerald-500 !w-2 !h-2" style={{ left: '-4px' }} />
-      <Handle type="source" position={Position.Right} id="source-right" className="!bg-emerald-500 !w-2 !h-2" style={{ right: '-4px' }} />
-      <Handle type="source" position={Position.Bottom} id="source-bottom" className="!bg-emerald-500 !w-2 !h-2" style={{ bottom: '-4px' }} />
+      <Handle type="source" position={Position.Top} id="source-top" className={`!w-2 !h-2 ${isScoped ? '!bg-emerald-500' : '!bg-blue-500'}`} style={{ top: '-4px' }} />
+      <Handle type="source" position={Position.Left} id="source-left" className={`!w-2 !h-2 ${isScoped ? '!bg-emerald-500' : '!bg-blue-500'}`} style={{ left: '-4px' }} />
+      <Handle type="source" position={Position.Right} id="source-right" className={`!w-2 !h-2 ${isScoped ? '!bg-emerald-500' : '!bg-blue-500'}`} style={{ right: '-4px' }} />
+      <Handle type="source" position={Position.Bottom} id="source-bottom" className={`!w-2 !h-2 ${isScoped ? '!bg-emerald-500' : '!bg-blue-500'}`} style={{ bottom: '-4px' }} />
     </div>
   )
 })

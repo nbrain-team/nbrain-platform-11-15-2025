@@ -267,7 +267,7 @@ export default function ClientChatEmbed() {
             } else {
               if (nodeId) {
                 alert('Project created and linked to your roadmap!')
-                window.parent.location.href = '/roadmap'
+                window.parent.location.href = '/roadmap?refresh=true'
               } else {
                 alert('Project scope created successfully!')
                 window.parent.location.href = assignClientId ? '/advisor' : '/projects'
