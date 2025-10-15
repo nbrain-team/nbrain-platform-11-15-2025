@@ -690,6 +690,8 @@ app.post('/admin/users', auth('admin'), async (req, res) => {
     // Seed predefined credentials for client users
     if (role === 'client') {
       await seedUserCredentials(id);
+      // Create default AI Ecosystem
+      await createDefaultEcosystem(id);
     }
     res.json({ ok: true, id });
   } catch (e) {
@@ -3266,6 +3268,9 @@ app.post('/public-ideator/signup', async (req, res) => {
     // Seed default credentials for the new user
     await seedUserCredentials(userId);
     
+    // Create default AI Ecosystem
+    await createDefaultEcosystem(userId);
+    
     // Create a draft project with their ideation conversation
     if (conversation_history.length > 0) {
       const projectName = 'AI Project Ideation - ' + new Date().toLocaleDateString();
@@ -3312,6 +3317,9 @@ app.post('/public/signup', async (req, res) => {
     );
     const userId = r.rows[0].id;
     await seedUserCredentials(userId);
+    
+    // Create default AI Ecosystem
+    await createDefaultEcosystem(userId);
 
     // record desired onboarding time
     // If there is an assigned default advisor logic elsewhere, we could place a null advisor. For now, store request with advisor_id = 0.
@@ -3994,6 +4002,56 @@ app.post('/public/reset-password', async (req, res) => {
 // ===========================
 // AI ADOPTION ROADMAP ENDPOINTS
 // ===========================
+
+// Helper function to create default AI Ecosystem for new clients
+async function createDefaultEcosystem(userId) {
+  try {
+    // Check if ecosystem already exists
+    const existing = await pool.query(
+      'SELECT id FROM ai_roadmap_configs WHERE user_id = $1 LIMIT 1',
+      [userId]
+    );
+    
+    if (existing.rowCount > 0) {
+      console.log(`Ecosystem already exists for user ${userId}`);
+      return;
+    }
+    
+    // Create roadmap config
+    const newConfig = await pool.query(
+      'INSERT INTO ai_roadmap_configs (user_id, name, is_default) VALUES ($1, $2, true) RETURNING *',
+      [userId, 'My AI Ecosystem']
+    );
+    
+    const configId = newConfig.rows[0].id;
+    
+    // Create default category nodes matching the standard layout
+    const defaultCategories = [
+      { name: 'The Brain', x: 600, y: 350, description: 'Central AI strategy hub', color: '#9333EA' },
+      // Left side categories
+      { name: 'Sales', x: 350, y: 200, description: 'Sales AI initiatives', color: '#EC4899' },
+      { name: 'Marketing', x: 350, y: 350, description: 'Marketing AI initiatives', color: '#F59E0B' },
+      { name: 'HR', x: 350, y: 500, description: 'HR AI initiatives', color: '#10B981' },
+      // Right side categories
+      { name: 'Operations', x: 850, y: 200, description: 'Operations AI initiatives', color: '#3B82F6' },
+      { name: 'Finance', x: 850, y: 350, description: 'Finance AI initiatives', color: '#3B82F6' },
+      { name: 'Other', x: 850, y: 500, description: 'Other AI initiatives', color: '#6B7280' },
+    ];
+    
+    for (const cat of defaultCategories) {
+      await pool.query(
+        `INSERT INTO roadmap_nodes (roadmap_config_id, node_type, title, description, position_x, position_y, category, is_category)
+         VALUES ($1, 'category', $2, $3, $4, $5, $2, true)`,
+        [configId, cat.name, cat.description, cat.x, cat.y]
+      );
+    }
+    
+    console.log(`Created default AI Ecosystem for user ${userId}`);
+  } catch (e) {
+    console.error('Error creating default ecosystem:', e);
+    // Non-fatal - don't throw
+  }
+}
 
 // Get or create roadmap for current user
 app.get('/roadmap', auth(), async (req, res) => {
