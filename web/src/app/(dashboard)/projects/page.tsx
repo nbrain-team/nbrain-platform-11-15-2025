@@ -40,16 +40,10 @@ export default function ProjectsPage() {
       }
     })()
   }, [api, authHeaders])
-  const alerts = [
-    { id: "ALT-32", type: "Access", text: "Grant read‑only access to GA4 for PRJ‑2001." },
-    { id: "ALT-33", type: "API", text: "Add OpenAI API key for reporting agent (billing at cost)." },
-    { id: "ALT-34", type: "Question", text: "Confirm target KPIs for weekly deck (PRJ‑2001)." },
-  ]
-  const deliverables = [
-    { title: "Reporting agent v1", project: "PRJ-2001", when: "2 days ago", action: "View" },
-    { title: "CRM enrichment run", project: "PRJ-1980", when: "Mon", action: "Open" },
-    { title: "Ops QA checklist", project: "PRJ-1001", when: "Last week", action: "Download" },
-  ]
+  
+  // Projects in production are those with status "In production"
+  const projectsInProduction = projects.filter(p => p.status === 'In production')
+  
   return (
     <div>
       <div className="flex items-center justify-between">
@@ -59,18 +53,43 @@ export default function ProjectsPage() {
         </div>
         <a href="/roadmap" className="btn-primary">+ Add to Ecosystem</a>
       </div>
-      {/* Alerts / Required actions */}
-      <section className="mt-4 rounded-xl border border-[var(--color-border)] bg-white p-4 shadow-card">
-        <div className="mb-2 text-lg font-semibold">Required actions</div>
-        <ul className="grid grid-cols-1 gap-2 md:grid-cols-2">
-          {alerts.map(a => (
-            <li key={a.id} className="flex items-start gap-2 rounded-md border border-[var(--color-border)] p-3 text-sm">
-              <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[var(--color-primary)]" />
-              <span className="text-[var(--color-text-muted)]">{a.text}</span>
-              <button className="btn-secondary ml-auto px-3 py-1 text-xs">Resolve</button>
-            </li>
-          ))}
-        </ul>
+      
+      {/* Projects in Production */}
+      <section className="mt-4 rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-[var(--color-text)]">Projects in Production</h2>
+            <p className="text-sm text-[var(--color-text-muted)]">Active projects currently being developed</p>
+          </div>
+          <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+            {projectsInProduction.length} Active
+          </span>
+        </div>
+        <div className="divide-y">
+          {projectsInProduction.length === 0 ? (
+            <div className="py-8 text-center text-[var(--color-text-muted)]">
+              No Projects in Production
+            </div>
+          ) : (
+            projectsInProduction.map(p => (
+              <div key={p.id} className="grid grid-cols-3 items-center gap-4 p-4 text-sm hover:bg-[var(--color-surface-alt)] group">
+                <a href={`/projects/PRJ-${String(p.id).padStart(4,'0')}`} className="font-medium text-[var(--color-text)]">
+                  {p.name.replace(/^Draft:\s*/i,'')}
+                </a>
+                <div className="flex items-center gap-3 text-[var(--color-text-muted)]">
+                  <div>PRJ-{String(p.id).padStart(4,'0')}</div>
+                  <div className="h-2 w-56 flex-none shrink-0 rounded bg-[var(--color-surface-alt)]">
+                    <div className="h-2 rounded bg-blue-500" style={{ width: '60%' }} />
+                  </div>
+                  <span className="text-xs whitespace-nowrap w-40 truncate overflow-hidden flex-none shrink-0">{p.status}</span>
+                </div>
+                <div className="text-right">
+                  <span className="rounded-full px-3 py-1 text-xs font-semibold bg-blue-100 text-blue-700">Active</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </section>
 
       {/* Scoped Projects - Projects that have been defined through AI */}
