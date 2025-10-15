@@ -79,8 +79,13 @@ export default function RoadmapPage() {
     (async () => {
       try {
         setLoading(true)
+        console.log('Loading roadmap from:', `${api}/roadmap`)
+        console.log('Auth headers:', authHeaders ? 'Present' : 'Missing')
+        
         const res = await fetch(`${api}/roadmap`, { headers: authHeaders })
         const data = await res.json()
+        
+        console.log('Roadmap API response:', data)
         
         if (data.ok && data.roadmap) {
           setRoadmapData(data.roadmap)
