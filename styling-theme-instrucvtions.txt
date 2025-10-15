@@ -1,0 +1,194 @@
+##High-level look & feel##
+
+Overall vibe: clean, corporate, “white-glove” marketing site with generous whitespace, big headlines, and friendly iconography. Sections breathe; copy is concise; CTAs are bold and high-contrast. 
+boldrimpact.com
+
+Layout rhythm: stacked sections with strong hero, benefit tiles, testimonial blocks, capability lists, and repeated CTA. Content width remains centered and readable. 
+boldrimpact.com
+
+
+##Color system (tokens)##
+
+The brand uses a punchy orange in the logo plus neutral grays/black on white. Use these as starting tokens; tweak hex values as needed to match the exact brand orange sampled from the logo. 
+boldrimpact.com
+
+:root {
+  /* Brand */
+  --color-primary: #F36A1D;   /* Boldr-like orange (approx. from logo) */
+  --color-primary-700: #D95712;
+  --color-primary-50:  #FFF3E9;
+
+  /* Neutrals */
+  --color-bg: #FFFFFF;
+  --color-text: #111111;      /* near-black for headlines */
+  --color-text-muted: #4B5563;/* gray-600 for body */
+  --color-border: #E5E7EB;    /* light gray divider */
+  --color-surface: #FFFFFF;   /* card/tiles background */
+  --color-surface-alt: #F9FAFB;/* light gray section alt */
+
+  /* Accents (icons/links/illustrations) */
+  --color-accent: #0F766E;    /* deep teal (subtle accent) */
+  --color-accent-50: #ECFDF5;
+
+  /* States */
+  --color-success: #16A34A;
+  --color-warning: #F59E0B;
+  --color-danger:  #DC2626;
+
+  /* Focus */
+  --ring: 2px solid rgba(243,106,29,.35);
+}
+
+
+##Typography##
+Font family: modern humanist/geometric sans. Use Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+
+Type scale (desktop):
+
+H1: 48–56px / 1.1 line-height; heavy/semibold (hero)
+
+H2: 36–40px / 1.2 (section leads)
+
+H3: 24–28px / 1.25 (tile headings)
+
+Body: 18–20px / 1.6 (readable marketing copy)
+
+Small: 14–16px / 1.5 (eyebrow, captions)
+
+Color use: headlines near-black; body gray-600; links primary orange with underline on hover. This mirrors the high-contrast heading + muted body pattern visible on the ecommerce page. 
+boldrimpact.com
+
+
+##Spacing & layout grid##
+
+Container max-width: 1200–1280px (content), center with padding-inline: 24px mobile / 40px desktop.
+
+Section padding:
+
+Desktop: 96px top & bottom (hero up to 128px)
+
+Tablet: 72px
+
+Mobile: 48px
+
+Vertical rhythm: use an 8-pt system (4/8/12/16/24/32/48/64/96…). Headline→subhead: 16–20px; subhead→body: 16px; body→CTA: 24px.
+
+Columns: 12-col grid; common content blocks use 6/12 and 4/12 patterns. Benefit tiles often display in 3× on desktop, 2× tablet, 1× mobile (as seen in “Why choose…” section). 
+boldrimpact.com
+
+
+##Buttons & links##
+
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  padding: 12px 20px; /* md density */
+  border-radius: 10px; /* soft rounded */
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: transform .02s ease, background .2s ease, box-shadow .2s ease;
+}
+.btn-primary:hover { background: var(--color-primary-700); }
+.btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(243,106,29,.25); }
+.btn-secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  padding: 12px 20px; border-radius: 10px; font-weight: 600;
+}
+.link { color: var(--color-primary); text-decoration: underline; }
+.link:hover { text-decoration-thickness: 2px; }
+
+
+##Cards / tiles / testimonials##
+
+Cards: white surface, subtle shadow 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06), border-radius: 12px, padding: 24–32px, icon/image top, short H3, body text, optional CTA/link. This mirrors their benefit tiles & testimonial blocks. 
+boldrimpact.com
+
+Dividers: use 1px var(--color-border) or section background alternation --color-surface-alt.
+
+
+##Hero section##
+
+Structure: eyebrow (optional), big H1, supportive H2/subhead, short paragraph, primary CTA, secondary CTA (ghost), hero image/illustration to the right or below on mobile. This follows their hero pattern (“We delight your customers…”, subhead, CTA). 
+boldrimpact.com
+
+Hero spacing: 128px top / 96px bottom desktop; stack on mobile with 48px gaps.
+
+
+##Iconography & imagery##
+
+Icons: simple line/duotone with brand orange accents; size 40–56px in tiles.
+
+Image treatment: clean photography/illustrations with ample whitespace; rounded corners 12–16px.
+
+
+##Lists & capability grids##
+
+Bulleted lists: comfortable line-height: 1.6 and margin-block: 12px; checkmark or simple dot; keep left alignment and consistent icon color (primary). Reflects their capability breakdowns and “Leading eCommerce companies trust…” lists. 
+boldrimpact.com
+
+##Footer##
+
+Background: white (or very light gray), multi-column link lists, certification badges, and social links; generous padding 48–64px. This structure shows on both the ecommerce and home pages.
+
+
+##Tailwind preset ##
+
+If you’re using Tailwind in Cursor, start with:
+
+// tailwind.config.js (excerpt)
+theme: {
+  container: { center: true, padding: { DEFAULT: '1.5rem', lg: '2.5rem' } , screens: { '2xl': '1280px' } },
+  extend: {
+    colors: {
+      primary: { DEFAULT: '#F36A1D', 700: '#D95712', 50: '#FFF3E9' },
+      surface: { DEFAULT: '#FFFFFF', alt: '#F9FAFB' },
+      text: { DEFAULT: '#111111', muted: '#4B5563' },
+      border: '#E5E7EB',
+      accent: { DEFAULT: '#0F766E', 50:'#ECFDF5' },
+    },
+    borderRadius: { 'lg': '12px', 'xl': '16px' },
+    boxShadow: {
+      card: '0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06)'
+    },
+    fontFamily: {
+      sans: ['Inter','system-ui','-apple-system','Segoe UI','Roboto','Helvetica','Arial','sans-serif']
+    },
+    fontSize: {
+      h1: ['56px', { lineHeight: '1.1', fontWeight: '700' }],
+      h2: ['40px', { lineHeight: '1.2', fontWeight: '700' }],
+      h3: ['28px', { lineHeight: '1.25', fontWeight: '700' }],
+      body: ['18px', { lineHeight: '1.6', fontWeight: '400' }],
+    },
+    spacing: { 18: '4.5rem', 22: '5.5rem' }
+  }
+}
+
+####Components to mirror##
+
+Hero with two CTAs (primary orange + ghost). 
+boldrimpact.com
+
+Icon benefit grid (3× on desktop, 2× tablet, 1× mobile). 
+boldrimpact.com
+
+Logo wall / social proof. 
+boldrimpact.com
+
+Testimonials with headshot + name/title. 
+boldrimpact.com
+
+Capability lists with bullets + section header. 
+boldrimpact.com
+
+Certifications/badges row in footer. 
+boldrimpact.com
+
+##Accessibility & usability notes##
+
+Keep contrast ≥ WCAG AA (the brand orange on white is fine for buttons; avoid using orange for long body text).
+
+Ensure focus rings on all interactive elements (use the orange ring token above).
+
+Maintain 44×44px touch targets on mobile CTAs.

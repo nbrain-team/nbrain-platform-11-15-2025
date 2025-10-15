@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running pre-push checks..."
+
+# Run type checking
+echo "Type checking..."
+cd web && npm run type-check 2>/dev/null || echo "⚠️  Type warnings found (non-blocking)"
+
+# Run linting (non-blocking)
+echo "Linting..."
+npm run lint 2>/dev/null || echo "⚠️  Lint warnings found (non-blocking)"
+
+echo "✅ Pre-push checks complete. Pushing to remote..."

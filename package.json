@@ -1,0 +1,12 @@
+{
+  "name": "xsourcing-monorepo-private-private",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "cd web && npm ci && npm run build",
+    "start": "cd web && npm start"
+  },
+  "engines": {
+    "node": "^20 || ^22"
+  }
+}

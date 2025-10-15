@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Styling Demo - Managed AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Darker theme tokens */
+        :root {
+            --color-primary: #F36A1D;
+            --color-primary-700: #D95712;
+            --color-primary-50: #FFF3E9;
+            --color-bg: #F3F4F6;  /* Changed from white to light gray */
+            --color-text: #111111;
+            --color-text-muted: #374151;  /* Darker muted text */
+            --color-border: #D1D5DB;  /* Slightly darker border */
+            --color-surface: #FFFFFF;
+            --color-surface-alt: #E5E7EB;  /* Darker alt surface */
+            --color-accent: #0F766E;
+            --color-accent-50: #ECFDF5;
+            --color-navy: #0F1B2A;
+        }
+
+        body { 
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Utilities */
+        .btn-primary { 
+            background: var(--color-primary); 
+            color: #fff; 
+            padding: 12px 20px; 
+            border-radius: 10px; 
+            font-weight: 600; 
+            border: 1px solid transparent; 
+            transition: transform .02s ease, background .2s ease, box-shadow .2s ease;
+            display: inline-block;
+            text-decoration: none;
+        }
+        .btn-primary:hover { background: var(--color-primary-700); }
+        .btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(243,106,29,.25); }
+        
+        .btn-secondary { 
+            background: var(--color-surface); 
+            color: var(--color-text); 
+            border: 1px solid var(--color-border); 
+            padding: 12px 20px; 
+            border-radius: 10px; 
+            font-weight: 600;
+            display: inline-block;
+            text-decoration: none;
+        }
+        
+        .shadow-card { box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 10px 30px rgba(0,0,0,.08); }
+        
+        /* Tailwind utilities */
+        .space-y-8 > * + * { margin-top: 2rem; }
+        .space-y-6 > * + * { margin-top: 1.5rem; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+        .space-y-2 > * + * { margin-top: 0.5rem; }
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .gap-4 { gap: 1rem; }
+        .gap-6 { gap: 1.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        .gap-2 { gap: 0.5rem; }
+        .rounded-xl { border-radius: 0.75rem; }
+        .rounded-lg { border-radius: 0.5rem; }
+        .rounded-md { border-radius: 0.375rem; }
+        .rounded { border-radius: 0.25rem; }
+        .rounded-full { border-radius: 9999px; }
+        .border { border-width: 1px; }
+        .border-b { border-bottom-width: 1px; }
+        .border-r { border-right-width: 1px; }
+        .p-6 { padding: 1.5rem; }
+        .p-4 { padding: 1rem; }
+        .p-3 { padding: 0.75rem; }
+        .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .px-4 { padding-left: 1rem; padding-right: 1rem; }
+        .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .-mx-6 { margin-left: -1.5rem; margin-right: -1.5rem; }
+        .-mt-6 { margin-top: -1.5rem; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .font-semibold { font-weight: 600; }
+        .font-medium { font-weight: 500; }
+        .uppercase { text-transform: uppercase; }
+        .tracking-wide { letter-spacing: 0.025em; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .underline { text-decoration: underline; }
+        .transition { transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+        .divide-y > * + * { border-top-width: 1px; border-color: var(--color-border); }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-end { justify-content: flex-end; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .min-h-screen { min-height: 100vh; }
+        .block { display: block; }
+        .inline-block { display: inline-block; }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        .h-2 { height: 0.5rem; }
+        .h-28 { height: 7rem; }
+        .overflow-hidden { overflow: hidden; }
+        .object-cover { object-fit: cover; }
+        .bg-white { background-color: #ffffff; }
+        
+        /* Grid responsive utilities */
+        @media (min-width: 768px) {
+            .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .md\:grid-cols-\[260px_1fr\] { grid-template-columns: 260px 1fr; }
+        }
+        
+        /* Custom border colors */
+        .border-\\[var\\(--color-primary\\)\\] { border-color: var(--color-primary); }
+        .border-\\[var\\(--color-border\\)\\] { border-color: var(--color-border); }
+        
+        /* Custom background colors */
+        .bg-\\[var\\(--color-primary-50\\)\\] { background-color: var(--color-primary-50); }
+        .bg-\\[var\\(--color-surface-alt\\)\\] { background-color: var(--color-surface-alt); }
+        .bg-\\[var\\(--color-primary\\)\\] { background-color: var(--color-primary); }
+        
+        /* Custom text colors */
+        .text-\\[var\\(--color-text\\)\\] { color: var(--color-text); }
+        .text-\\[var\\(--color-text-muted\\)\\] { color: var(--color-text-muted); }
+        .text-\\[var\\(--color-primary\\)\\] { color: var(--color-primary); }
+        
+        /* Hover states */
+        .hover\\:bg-\\[var\\(--color-primary-50\\)\\]\\/80:hover { background-color: rgba(255, 243, 233, 0.8); }
+        .hover\\:bg-\\[var\\(--color-surface-alt\\)\\]:hover { background-color: var(--color-surface-alt); }
+        .hover\\:bg-white:hover { background-color: #ffffff; }
+    </style>
+</head>
+<body>
+    <div class="grid min-h-screen grid-cols-1 md:grid-cols-[260px_1fr]">
+        <!-- Sidebar -->
+        <aside class="flex flex-col justify-between border-r border-[var(--color-border)] bg-[var(--color-surface-alt)] p-4">
+            <div>
+                <div class="mb-6 text-lg font-semibold text-[var(--color-text)]">Managed AI</div>
+                <nav class="space-y-2 text-sm">
+                    <a class="block rounded-md px-3 py-2 hover:bg-white" href="#">Overview</a>
+                    <a class="block rounded-md px-3 py-2 hover:bg-white" href="#">Projects</a>
+                    <a class="block rounded-md px-3 py-2 hover:bg-white" href="#">Schedule</a>
+                    <a class="block rounded-md px-3 py-2 hover:bg-white" href="#">Chat agent</a>
+                    <a class="block rounded-md px-3 py-2 hover:bg-white" href="#">Back to site</a>
+                </nav>
+            </div>
+            <div class="text-sm">
+                <a class="block rounded-md px-3 py-2 hover:bg-white" href="#">Profile & settings</a>
+                <button class="mt-2 block w-full rounded-md px-3 py-2 text-left hover:bg-white">Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <main class="p-6">
+            <div class="mb-4 flex items-center justify-end gap-3">
+                <span class="text-xs text-[var(--color-text-muted)]">Signed in as client</span>
+                <button class="rounded-full border border-[var(--color-border)] bg-white px-4 py-2 text-sm font-semibold shadow-card">Logout</button>
+            </div>
+
+            <div class="space-y-8">
+                <header>
+                    <h1 class="text-2xl font-semibold text-[var(--color-text)]">Overview</h1>
+                    <p class="text-[var(--color-text-muted)]">Welcome back. This is a static mock of the client dashboard.</p>
+                </header>
+
+                <!-- Primary calls to action -->
+                <section class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <a href="#" class="rounded-xl border border-[var(--color-primary)] bg-[var(--color-primary-50)] p-6 text-center shadow-card transition hover:bg-[var(--color-primary-50)]/80">
+                        <div class="text-lg font-semibold text-[var(--color-text)]">Schedule AI Strategy Call</div>
+                        <p class="mt-1 text-[var(--color-text-muted)]">Pick a time to meet with your strategist and plan the next sprint.</p>
+                        <button class="btn-primary mt-4">Schedule</button>
+                    </a>
+                    <a href="#" class="rounded-xl border border-[var(--color-border)] bg-white p-6 text-center shadow-card transition hover:bg-[var(--color-surface-alt)]">
+                        <div class="text-lg font-semibold text-[var(--color-text)]">Start a New Project</div>
+                        <p class="mt-1 text-[var(--color-text-muted)]">Use the chat agent to scope work and generate a proposal fast.</p>
+                        <button class="btn-secondary mt-4">New Project</button>
+                    </a>
+                </section>
+
+                <section class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <!-- Projects In Production -->
+                    <div class="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
+                        <div style="margin: -1.5rem -1.5rem 0 -1.5rem; border-bottom: 1px solid var(--color-border); padding: 1rem;" class="text-lg font-semibold">Projects In Production</div>
+                        <div class="grid" style="grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 1rem; border-bottom: 1px solid var(--color-border); padding: 0.75rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.025em; color: var(--color-text-muted);">
+                            <div>Project</div>
+                            <div>Progress</div>
+                            <div class="text-right">ETA</div>
+                        </div>
+                        <ul class="divide-y">
+                            <li class="grid" style="grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 1rem; padding: 0.75rem;">
+                                <div class="font-medium">AI Customer Service Bot</div>
+                                <div class="flex items-center gap-3">
+                                    <div class="h-2 w-full rounded bg-[var(--color-surface-alt)]">
+                                        <div class="h-2 rounded bg-[var(--color-primary)]" style="width: 65%"></div>
+                                    </div>
+                                    <span class="text-xs text-[var(--color-text-muted)]">in flight</span>
+                                </div>
+                                <div class="text-right text-sm text-[var(--color-text-muted)]">Dec 15</div>
+                            </li>
+                            <li class="grid" style="grid-template-columns: 1fr 1fr 1fr; align-items: center; gap: 1rem; padding: 0.75rem;">
+                                <div class="font-medium">Marketing Automation Suite</div>
+                                <div class="flex items-center gap-3">
+                                    <div class="h-2 w-full rounded bg-[var(--color-surface-alt)]">
+                                        <div class="h-2 rounded bg-[var(--color-primary)]" style="width: 35%"></div>
+                                    </div>
+                                    <span class="text-xs text-[var(--color-text-muted)]">in flight</span>
+                                </div>
+                                <div class="text-right text-sm text-[var(--color-text-muted)]">Jan 5</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Completed Projects -->
+                    <div class="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
+                        <div style="margin: -1.5rem -1.5rem 0 -1.5rem; border-bottom: 1px solid var(--color-border); padding: 1rem;" class="text-lg font-semibold">Completed Projects</div>
+                        <div class="grid" style="grid-template-columns: 1fr 1fr; align-items: center; gap: 1rem; border-bottom: 1px solid var(--color-border); padding: 0.75rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.025em; color: var(--color-text-muted);">
+                            <div>Project</div>
+                            <div class="text-right">Finished</div>
+                        </div>
+                        <ul class="divide-y text-sm text-[var(--color-text-muted)]">
+                            <li class="grid" style="grid-template-columns: 1fr 1fr; align-items: center; gap: 1rem; padding: 0.75rem;">
+                                <span class="text-[var(--color-text)]">Data Analytics Dashboard</span>
+                                <span class="text-right">Recently</span>
+                            </li>
+                            <li class="grid" style="grid-template-columns: 1fr 1fr; align-items: center; gap: 1rem; padding: 0.75rem;">
+                                <span class="text-[var(--color-text)]">Inventory Management AI</span>
+                                <span class="text-right">Recently</span>
+                            </li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Learning Center -->
+                <section class="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
+                    <div class="mb-4 flex items-center justify-between">
+                        <div class="text-lg font-semibold">Learning Center</div>
+                        <a href="#" class="text-sm text-[var(--color-primary)] underline">View all</a>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div class="overflow-hidden rounded-lg border border-[var(--color-border)]">
+                            <img src="https://images.unsplash.com/photo-1570372?auto=format&fit=crop&w=1200&q=60" alt="Article" class="h-28 w-full object-cover">
+                            <div class="p-3">
+                                <div class="text-sm font-semibold text-[var(--color-text)]">Prompt libraries for marketers</div>
+                                <p class="mt-1 text-xs text-[var(--color-text-muted)]">Quick reads and videos to get more from your membership.</p>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden rounded-lg border border-[var(--color-border)]">
+                            <img src="https://images.unsplash.com/photo-1571372?auto=format&fit=crop&w=1200&q=60" alt="Article" class="h-28 w-full object-cover">
+                            <div class="p-3">
+                                <div class="text-sm font-semibold text-[var(--color-text)]">How to scope an AI project</div>
+                                <p class="mt-1 text-xs text-[var(--color-text-muted)]">Quick reads and videos to get more from your membership.</p>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden rounded-lg border border-[var(--color-border)]">
+                            <img src="https://images.unsplash.com/photo-1572372?auto=format&fit=crop&w=1200&q=60" alt="Article" class="h-28 w-full object-cover">
+                            <div class="p-3">
+                                <div class="text-sm font-semibold text-[var(--color-text)]">Playbooks: reporting automation</div>
+                                <p class="mt-1 text-xs text-[var(--color-text-muted)]">Quick reads and videos to get more from your membership.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

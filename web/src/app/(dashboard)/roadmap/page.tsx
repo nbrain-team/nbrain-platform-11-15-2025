@@ -1,0 +1,391 @@
+"use client"
+import { useEffect, useState, useCallback, useMemo } from "react"
+import ReactFlow, {
+  Node,
+  Edge,
+  Background,
+  Controls,
+  MiniMap,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  Connection,
+  MarkerType,
+  BackgroundVariant,
+  NodeTypes,
+} from 'reactflow'
+import 'reactflow/dist/style.css'
+import { ProjectNode } from '@/components/roadmap/nodes/ProjectNode'
+import { IdeaNode } from '@/components/roadmap/nodes/IdeaNode'
+import { DepartmentNode } from '@/components/roadmap/nodes/DepartmentNode'
+import { CategoryNode } from '@/components/roadmap/nodes/CategoryNode'
+import { SubCategoryNode } from '@/components/roadmap/nodes/SubCategoryNode'
+import { RoadmapToolbar } from '@/components/roadmap/RoadmapToolbar'
+import { RoadmapSidebar } from '@/components/roadmap/RoadmapSidebar'
+import { AddNodeModal } from '@/components/roadmap/modals/AddNodeModal'
+
+type RoadmapNode = {
+  id: number
+  node_type: string
+  title: string
+  description: string
+  status: string
+  priority: string
+  position_x: number
+  position_y: number
+  project_id?: number
+  idea_id?: string
+  estimated_roi?: number
+  estimated_timeline?: string
+}
+
+type RoadmapEdge = {
+  id: number
+  source_node_id: number
+  target_node_id: number
+  edge_type: string
+  label?: string
+  is_critical: boolean
+}
+
+export default function RoadmapPage() {
+  const api = process.env.NEXT_PUBLIC_API_BASE_URL || ""
+  const [loading, setLoading] = useState(true)
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [roadmapData, setRoadmapData] = useState<{ nodes: RoadmapNode[], edges: RoadmapEdge[] }>({ nodes: [], edges: [] })
+  
+  const authHeaders = useMemo<HeadersInit | undefined>(() => {
+    const t = typeof window !== 'undefined' ? localStorage.getItem("xsourcing_token") : null
+    return t ? { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' } : undefined
+  }, [])
+
+  // Custom node types
+  const nodeTypes: NodeTypes = useMemo(() => ({
+    project: ProjectNode,
+    idea: IdeaNode,
+    department: DepartmentNode,
+    category: CategoryNode,
+    subcategory: SubCategoryNode,
+  }), [])
+
+  // React Flow state
+  const [nodes, setNodes, onNodesChange] = useNodesState([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState([])
+
+  // Load roadmap data
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true)
+        const res = await fetch(`${api}/roadmap`, { headers: authHeaders })
+        const data = await res.json()
+        
+        if (data.ok && data.roadmap) {
+          setRoadmapData(data.roadmap)
+          
+          // Convert database nodes to React Flow nodes
+          const flowNodes: Node[] = data.roadmap.nodes.map((node: RoadmapNode) => ({
+            id: String(node.id),
+            type: node.node_type,
+            position: { x: Number(node.position_x), y: Number(node.position_y) },
+            data: {
+              ...node,
+              onSelect: (n: Node) => setSelectedNode(n),
+            },
+          }))
+          
+          // Convert database edges to React Flow edges
+          const flowEdges: Edge[] = data.roadmap.edges.map((edge: RoadmapEdge) => ({
+            id: String(edge.id),
+            source: String(edge.source_node_id),
+            target: String(edge.target_node_id),
+            type: 'smoothstep',
+            label: edge.label,
+            animated: edge.is_critical,
+            markerEnd: {
+              type: MarkerType.ArrowClosed,
+            },
+            style: {
+              strokeWidth: edge.is_critical ? 3 : 2,
+              stroke: edge.is_critical ? '#EF4444' : '#6B7280',
+            },
+          }))
+          
+          setNodes(flowNodes)
+          setEdges(flowEdges)
+        }
+      } catch (e) {
+        console.error('Failed to load roadmap:', e)
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [api, authHeaders, setNodes, setEdges])
+
+  // Debounced position saver
+  const savePositionsDebounced = useCallback(
+    (() => {
+      let timeout: NodeJS.Timeout
+      return (nodesToSave: Node[]) => {
+        clearTimeout(timeout)
+        timeout = setTimeout(async () => {
+          try {
+            const positions = nodesToSave.map(n => ({
+              id: Number(n.id),
+              positionX: n.position.x,
+              positionY: n.position.y,
+            }))
+            
+            await fetch(`${api}/roadmap/bulk-update-positions`, {
+              method: 'POST',
+              headers: authHeaders,
+              body: JSON.stringify({ nodes: positions }),
+            })
+          } catch (e) {
+            console.error('Failed to save positions:', e)
+          }
+        }, 1000)
+      }
+    })(),
+    [api, authHeaders]
+  )
+
+  // Handle node drag end - save position
+  const handleNodeDragStop = useCallback(async (_event: unknown, node: Node) => {
+    try {
+      await fetch(`${api}/roadmap/nodes/${node.id}`, {
+        method: 'PUT',
+        headers: authHeaders,
+        body: JSON.stringify({
+          positionX: node.position.x,
+          positionY: node.position.y,
+        }),
+      })
+    } catch (e) {
+      console.error('Failed to save node position:', e)
+    }
+  }, [api, authHeaders])
+  
+  // Save positions when nodes change (debounced)
+  const handleNodesChangeWithSave = useCallback((changes: unknown) => {
+    onNodesChange(changes)
+    savePositionsDebounced(nodes)
+  }, [onNodesChange, savePositionsDebounced, nodes])
+
+  // Handle connection creation
+  const onConnect = useCallback(async (connection: Connection) => {
+    if (!connection.source || !connection.target) return
+    
+    try {
+      const res = await fetch(`${api}/roadmap/edges`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          sourceNodeId: Number(connection.source),
+          targetNodeId: Number(connection.target),
+          edgeType: 'dependency',
+          label: 'depends on',
+        }),
+      })
+      
+      const data = await res.json()
+      if (data.ok) {
+        setEdges((eds) => addEdge({
+          ...connection,
+          id: String(data.edge.id),
+          type: 'smoothstep',
+          markerEnd: { type: MarkerType.ArrowClosed },
+        }, eds))
+      }
+    } catch (e) {
+      console.error('Failed to create edge:', e)
+    }
+  }, [api, authHeaders, setEdges])
+
+  // Handle node click
+  const onNodeClick = useCallback((_event: unknown, node: Node) => {
+    setSelectedNode(node)
+  }, [])
+
+  // Handle add node
+  const handleAddNode = async (nodeData: { nodeType: string, title: string, description: string, priority: string }) => {
+    try {
+      const res = await fetch(`${api}/roadmap/nodes`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          ...nodeData,
+          positionX: 400,
+          positionY: 300,
+        }),
+      })
+      
+      const data = await res.json()
+      if (data.ok) {
+        const newNode: Node = {
+          id: String(data.node.id),
+          type: data.node.node_type,
+          position: { x: data.node.position_x, y: data.node.position_y },
+          data: {
+            ...data.node,
+            onSelect: setSelectedNode,
+          },
+        }
+        setNodes((nds) => [...nds, newNode])
+        setShowAddModal(false)
+      }
+    } catch (e) {
+      console.error('Failed to add node:', e)
+    }
+  }
+
+  // Handle delete node
+  const handleDeleteNode = async (nodeId: string) => {
+    try {
+      await fetch(`${api}/roadmap/nodes/${nodeId}`, {
+        method: 'DELETE',
+        headers: authHeaders,
+      })
+      
+      setNodes((nds) => nds.filter((n) => n.id !== nodeId))
+      setSelectedNode(null)
+    } catch (e) {
+      console.error('Failed to delete node:', e)
+    }
+  }
+
+  // Handle update node
+  const handleUpdateNode = useCallback((nodeId: string, updates: Record<string, unknown>) => {
+    setNodes((nds) => 
+      nds.map((n) => 
+        n.id === nodeId 
+          ? { ...n, data: { ...n.data, ...updates } }
+          : n
+      )
+    )
+    // Update selected node to reflect changes
+    setSelectedNode((prev) => 
+      prev && prev.id === nodeId 
+        ? { ...prev, data: { ...prev.data, ...updates } }
+        : prev
+    )
+  }, [setNodes])
+
+  // Handle export
+  const handleExport = async (format: 'png' | 'pdf') => {
+    if (format === 'png') {
+      // Dynamic import for html-to-image
+      const { toPng } = await import('html-to-image')
+      const element = document.querySelector('.react-flow') as HTMLElement
+      if (element) {
+        const dataUrl = await toPng(element)
+        const link = document.createElement('a')
+        link.download = 'ai-roadmap.png'
+        link.href = dataUrl
+        link.click()
+      }
+    } else if (format === 'pdf') {
+      const { toPng } = await import('html-to-image')
+      const { jsPDF } = await import('jspdf')
+      const element = document.querySelector('.react-flow') as HTMLElement
+      if (element) {
+        const dataUrl = await toPng(element)
+        const pdf = new jsPDF('landscape')
+        pdf.addImage(dataUrl, 'PNG', 10, 10, 277, 190)
+        pdf.save('ai-roadmap.pdf')
+      }
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-[70vh] items-center justify-center">
+        <div className="text-lg text-[var(--color-text-muted)]">Loading your AI Roadmap...</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-[var(--color-text)]">Your AI Ecosystem</h1>
+          <p className="text-[var(--color-text-muted)]">Visual strategy map of your AI adoption journey</p>
+        </div>
+        <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+          Add Node
+        </button>
+      </header>
+
+      <div className="flex gap-4">
+        {/* Main Canvas */}
+        <div className="flex-1 rounded-xl border border-[var(--color-border)] bg-white shadow-card" style={{ height: '70vh' }}>
+          <RoadmapToolbar onExport={handleExport} nodeCount={nodes.length} edgeCount={edges.length} />
+          
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={handleNodesChangeWithSave}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onNodeDragStop={handleNodeDragStop}
+            nodeTypes={nodeTypes}
+            fitView={nodes.length === 0}
+            fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
+            attributionPosition="bottom-left"
+          >
+            <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+            <Controls />
+            <MiniMap 
+              nodeColor={(node) => {
+                switch (node.type) {
+                  case 'project': return '#10B981'
+                  case 'idea': return '#8B5CF6'
+                  case 'department': return '#3B82F6'
+                  case 'category': return '#9333EA'
+                  case 'subcategory': return '#6366F1'
+                  default: return '#6B7280'
+                }
+              }}
+              maskColor="rgba(0, 0, 0, 0.1)"
+            />
+          </ReactFlow>
+        </div>
+
+        {/* Sidebar */}
+        {selectedNode && (
+          <RoadmapSidebar
+            node={selectedNode}
+            onClose={() => setSelectedNode(null)}
+            onDelete={handleDeleteNode}
+            onUpdate={handleUpdateNode}
+          />
+        )}
+      </div>
+
+      {/* Add Node Modal */}
+      {showAddModal && (
+        <AddNodeModal
+          onClose={() => setShowAddModal(false)}
+          onAdd={handleAddNode}
+        />
+      )}
+
+      {/* Getting Started Message */}
+      {nodes.length === 0 && (
+        <div className="mt-8 rounded-xl border border-[var(--color-border)] bg-gradient-to-br from-blue-50 to-purple-50 p-8 text-center">
+          <h3 className="text-xl font-semibold text-[var(--color-text)]">Welcome to Your AI Ecosystem!</h3>
+          <p className="mt-2 text-[var(--color-text-muted)]">
+            Get started by adding your first node. Projects and ideas from your account will appear here automatically.
+          </p>
+          <button className="btn-primary mt-4" onClick={() => setShowAddModal(true)}>
+            Create Your First Node
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+

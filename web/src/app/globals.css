@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@layer base {
+  body { @apply text-black antialiased; background-color: var(--color-bg); }
+}
+
+/* Theme tokens based on styling-theme-instrucvtions.txt - Darker theme for better contrast */
+:root {
+  --color-primary: #F36A1D;
+  --color-primary-700: #D95712;
+  --color-primary-50: #FFF3E9;
+  --color-bg: #F3F4F6;
+  --color-text: #111111;
+  --color-text-muted: #374151;
+  --color-border: #D1D5DB;
+  --color-surface: #FFFFFF;
+  --color-surface-alt: #E5E7EB;
+  --color-accent: #0F766E;
+  --color-accent-50: #ECFDF5;
+  --color-navy: #0F1B2A;
+}
+
+/* Utilities derived from the theme doc */
+.btn-primary { background: var(--color-primary); color: #fff; padding: 12px 20px; border-radius: 10px; font-weight: 600; border: 1px solid transparent; transition: transform .02s ease, background .2s ease, box-shadow .2s ease; }
+.btn-primary:hover { background: var(--color-primary-700); }
+.btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(243,106,29,.25); }
+.btn-secondary { background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border); padding: 12px 20px; border-radius: 10px; font-weight: 600; }
+.link { color: var(--color-primary); text-decoration: underline; }
+.link:hover { text-decoration-thickness: 2px; }
+.card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 10px 30px rgba(0,0,0,.08); }
+.shadow-card { box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 10px 30px rgba(0,0,0,.08); }
+
+/* Section helpers */
+.section { padding-block: 6rem; }
+.section-lg { padding-block: 7.5rem; }
+
+/* Marquee styles for Recent Projects */
+.marquee-track { display: flex; flex-direction: column; gap: 14px; }
+.marquee-row { display: inline-flex; gap: 14px; min-width: max-content; animation: marquee-left 35s linear infinite; }
+.marquee-row:nth-child(2) { animation-delay: -17.5s; }
+.marquee-card { width: 280px; flex: 0 0 auto; border: 1px solid var(--color-border); border-radius: 12px; background: #fff; padding: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+@keyframes marquee-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+

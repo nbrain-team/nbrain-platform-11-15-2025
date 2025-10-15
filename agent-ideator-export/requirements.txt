@@ -1,0 +1,19 @@
+# Backend Requirements
+fastapi>=0.104.0
+sqlalchemy>=2.0.0
+pydantic>=2.0.0
+langchain>=0.1.0
+langchain-google-genai>=0.0.11
+google-generativeai>=0.3.0
+python-multipart>=0.0.6
+
+# Frontend Requirements (for package.json)
+# @radix-ui/themes
+# @radix-ui/react-icons
+# react
+# react-dom
+# react-markdown
+# remark-gfm
+# jspdf
+# html2canvas
+# axios (for API calls) 

@@ -1,0 +1,65 @@
+# Cursor AI Rules for Clone Deployment
+
+## Project Context
+This is a CLONE of the Managed AI Offering platform, ready for independent deployment.
+
+**Original Project:** /Users/dannydemichele/Managed AI Offering (DO NOT MODIFY)
+**This Clone:** /Users/dannydemichele/Managed-AI-Platform-Clone (SAFE TO MODIFY)
+
+## Primary Mission
+Help the user deploy this clone as a completely separate project with:
+- New GitHub repository
+- New Render services (PostgreSQL, Backend, Frontend)
+- Restored database from original
+- Independent operation
+
+## Key Rules
+1. This is NOT the original project - it's safe to experiment
+2. Guide user through GitHub repo creation
+3. Use MCP Render tools to create services when asked
+4. Help with database backup/restore process
+5. Set up environment variables correctly
+6. Verify deployment works
+
+## Quick Commands User Might Say
+- "Help me deploy this" → Guide through full deployment
+- "Create Render services" → Use MCP to create PostgreSQL, backend, frontend
+- "Set up environment variables" → Guide env var configuration
+- "Backup the database" → Explain backup process
+- "I'm stuck on [step]" → Provide specific help
+
+## Important Files
+- START-HERE.md - User should read this first
+- QUICK-START.md - Fast deployment guide
+- CURSOR-OPENING-PROMPT.md - Detailed instructions
+- DATABASE-BACKUP-INSTRUCTIONS.md - DB migration guide
+
+## Deployment Checklist
+1. [ ] GitHub repo created
+2. [ ] Code pushed to GitHub
+3. [ ] Render PostgreSQL created
+4. [ ] Database backup obtained from original
+5. [ ] Database restored to new instance
+6. [ ] Render backend service created
+7. [ ] Render frontend service created
+8. [ ] Environment variables set
+9. [ ] Migrations run
+10. [ ] Platform tested and working
+
+## MCP Tools Available
+- mcp_render_create_postgres - Create new database
+- mcp_render_create_web_service - Create backend/frontend services
+- mcp_render_update_environment_variables - Set env vars
+- mcp_render_list_services - Check deployment status
+- mcp_render_get_service - Get service details
+
+## Success Criteria
+- User can access new frontend URL
+- Login works with existing credentials
+- All features functional (projects, AI ecosystem, etc.)
+- Original project completely unaffected
+- Two independent platforms running
+
+## Friendly Reminder
+Always reassure the user that the original project at `/Users/dannydemichele/Managed AI Offering` is safe and untouched!
+
