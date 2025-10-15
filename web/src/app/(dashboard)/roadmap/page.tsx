@@ -13,6 +13,7 @@ import ReactFlow, {
   MarkerType,
   BackgroundVariant,
   NodeTypes,
+  EdgeChange,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { ProjectNode } from '@/components/roadmap/nodes/ProjectNode'
@@ -173,6 +174,25 @@ export default function RoadmapPage() {
     savePositionsDebounced(nodes)
   }, [onNodesChange, savePositionsDebounced, nodes])
 
+  // Handle edge changes (including deletions)
+  const handleEdgesChangeWithSave = useCallback((changes: EdgeChange[]) => {
+    onEdgesChange(changes)
+    
+    // Check for edge removals and save to backend
+    changes.forEach(async (change) => {
+      if (change.type === 'remove') {
+        try {
+          await fetch(`${api}/roadmap/edges/${change.id}`, {
+            method: 'DELETE',
+            headers: authHeaders,
+          })
+        } catch (e) {
+          console.error('Failed to delete edge:', e)
+        }
+      }
+    })
+  }, [onEdgesChange, api, authHeaders])
+
   // Handle connection creation
   const onConnect = useCallback(async (connection: Connection) => {
     if (!connection.source || !connection.target) return
@@ -256,7 +276,8 @@ export default function RoadmapPage() {
   }
 
   // Handle update node
-  const handleUpdateNode = useCallback((nodeId: string, updates: Record<string, unknown>) => {
+  const handleUpdateNode = useCallback(async (nodeId: string, updates: Record<string, unknown>) => {
+    // Update local state immediately for better UX
     setNodes((nds) => 
       nds.map((n) => 
         n.id === nodeId 
@@ -270,7 +291,18 @@ export default function RoadmapPage() {
         ? { ...prev, data: { ...prev.data, ...updates } }
         : prev
     )
-  }, [setNodes])
+    
+    // Save to backend
+    try {
+      await fetch(`${api}/roadmap/nodes/${nodeId}`, {
+        method: 'PUT',
+        headers: authHeaders,
+        body: JSON.stringify(updates),
+      })
+    } catch (e) {
+      console.error('Failed to update node:', e)
+    }
+  }, [setNodes, api, authHeaders])
 
   // Handle export
   const handleExport = async (format: 'png' | 'pdf') => {
@@ -327,7 +359,7 @@ export default function RoadmapPage() {
             nodes={nodes}
             edges={edges}
             onNodesChange={handleNodesChangeWithSave}
-            onEdgesChange={onEdgesChange}
+            onEdgesChange={handleEdgesChangeWithSave}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
             onNodeDragStop={handleNodeDragStop}
