@@ -4210,7 +4210,7 @@ app.delete('/roadmap/nodes/:nodeId', auth(), async (req, res) => {
 app.post('/roadmap/edges', auth(), async (req, res) => {
   try {
     const userId = req.user.id;
-    const { sourceNodeId, targetNodeId, edgeType, label, isCritical } = req.body;
+    const { sourceNodeId, targetNodeId, edgeType, label, isCritical, sourceHandle, targetHandle } = req.body;
     
     // Get user's roadmap config
     const config = await pool.query(
@@ -4225,10 +4225,10 @@ app.post('/roadmap/edges', auth(), async (req, res) => {
     const configId = config.rows[0].id;
     
     const result = await pool.query(
-      `INSERT INTO roadmap_edges (roadmap_config_id, source_node_id, target_node_id, edge_type, label, is_critical)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO roadmap_edges (roadmap_config_id, source_node_id, target_node_id, edge_type, label, is_critical, source_handle, target_handle)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [configId, sourceNodeId, targetNodeId, edgeType || 'dependency', label || '', isCritical || false]
+      [configId, sourceNodeId, targetNodeId, edgeType || 'dependency', label || '', isCritical || false, sourceHandle || null, targetHandle || null]
     );
     
     res.json({ ok: true, edge: result.rows[0] });

@@ -47,6 +47,8 @@ type RoadmapEdge = {
   edge_type: string
   label?: string
   is_critical: boolean
+  source_handle?: string
+  target_handle?: string
 }
 
 export default function RoadmapPage() {
@@ -112,6 +114,8 @@ export default function RoadmapPage() {
             id: String(edge.id),
             source: String(edge.source_node_id),
             target: String(edge.target_node_id),
+            sourceHandle: edge.source_handle || undefined,
+            targetHandle: edge.target_handle || undefined,
             type: 'smoothstep',
             label: edge.label,
             animated: edge.is_critical,
@@ -262,6 +266,8 @@ export default function RoadmapPage() {
         body: JSON.stringify({
           sourceNodeId: Number(connection.source),
           targetNodeId: Number(connection.target),
+          sourceHandle: connection.sourceHandle || null,
+          targetHandle: connection.targetHandle || null,
           edgeType: 'dependency',
           label: 'depends on',
         }),
@@ -281,10 +287,15 @@ export default function RoadmapPage() {
       console.log('Edge created successfully:', data)
       
       if (data.ok && data.edge) {
-        // Replace temp edge with real one from backend
+        // Replace temp edge with real one from backend, preserving all connection details
         setEdges((eds) => eds.map(e => 
           e.id === tempEdge.id 
-            ? { ...e, id: String(data.edge.id) }
+            ? { 
+                ...e, 
+                id: String(data.edge.id),
+                sourceHandle: data.edge.source_handle || e.sourceHandle,
+                targetHandle: data.edge.target_handle || e.targetHandle,
+              }
             : e
         ))
       }
