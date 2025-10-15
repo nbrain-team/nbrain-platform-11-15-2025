@@ -460,8 +460,15 @@ export default function ProjectScopePage({ params }: { params: { id: string } })
 
         <TabsContent value="scope" className="space-y-6">
           <section className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
-            <div className="flex items-center justify-between"><h3 className="text-lg font-semibold">Executive Summary</h3>{editing.field !== 'summary' && <button className="btn-secondary px-3 py-1 text-xs" onClick={()=>startEdit('summary', idea?.summary || '')}>Edit</button>}</div>
-            {editing.field === 'summary' ? null : <p className="mt-2 text-[var(--color-text-muted)]">{idea?.summary || '—'}</p>}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold">Executive Summary</h3>
+              {editing.field !== 'summary' && <button className="btn-secondary px-3 py-1 text-xs" onClick={()=>startEdit('summary', idea?.summary || '')}>Edit</button>}
+            </div>
+            {editing.field === 'summary' ? null : (
+              <div className="prose max-w-none">
+                <p className="text-[var(--color-text-muted)] leading-relaxed">{idea?.summary || '—'}</p>
+              </div>
+            )}
           </section>
           <section className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
             <h3 className="text-lg font-semibold">What This Module Will Do</h3>
@@ -755,15 +762,24 @@ export default function ProjectScopePage({ params }: { params: { id: string } })
               </div>
             </div>
           ) : (
-            <ul className="mt-2 pl-4 text-[var(--color-text-muted)] list-disc">
+            <ul className="mt-2 pl-4 text-[var(--color-text-muted)] list-disc space-y-3">
               {Array.isArray(idea?.future_enhancements) ? (idea?.future_enhancements as unknown[]).map((r, idx) => (
-                <div key={`enh-${idx}`} className="mb-2">
-                  {!(rowEdit.field==='future_enhancements' && rowEdit.index===idx) && (
-                    <button aria-label="Edit item" title="Edit" className="mt-1 rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)]" onClick={()=>openRowEdit('future_enhancements', idx, r)}>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92L14.06 7.52l.92.92L5.92 19.58zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                    </button>
-                  )}
-                  {renderEnhancementItem(r, idx)}
+                <div key={`enh-${idx}`} className="group">
+                  {!(rowEdit.field==='future_enhancements' && rowEdit.index===idx) ? (
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        {renderEnhancementItem(r, idx)}
+                      </div>
+                      <button 
+                        aria-label="Edit item" 
+                        title="Edit" 
+                        className="flex-shrink-0 rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] opacity-0 group-hover:opacity-100 transition" 
+                        onClick={()=>openRowEdit('future_enhancements', idx, r)}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92L14.06 7.52l.92.92L5.92 19.58zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                      </button>
+                    </div>
+                  ) : null}
                   {rowEdit.field==='future_enhancements' && rowEdit.index===idx && (
                     <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
                       <input className="rounded-md border border-[var(--color-border)] px-2 py-1 text-sm md:col-span-1" placeholder="Title" value={rowEdit.title} onChange={e=>setRowEdit(prev=>({...prev,title:e.target.value}))} />
