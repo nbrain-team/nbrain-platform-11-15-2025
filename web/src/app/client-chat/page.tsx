@@ -6,16 +6,26 @@ import remarkGfm from 'remark-gfm'
 type Message = { role: 'user' | 'assistant'; content: string }
 
 export default function ClientChatEmbed() {
-  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
-  const apiBase = params.get('api') || process.env.NEXT_PUBLIC_API_BASE_URL || ''
-  const token = params.get('t') || (typeof window !== 'undefined' ? localStorage.getItem('xsourcing_token') || '' : '')
-  const projectId = params.get('projectId') // For continuing from draft
-  const assignClientId = params.get('clientId') // When used by advisor to create for a client
-  const nodeId = params.get('nodeId') // For linking back to roadmap node
-  const mode = (params.get('mode') as 'project'|'idea'|null) || 'project'
+  // Use state to ensure params are read after component mounts
+  const [params, setParams] = useState<URLSearchParams | null>(null)
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setParams(new URLSearchParams(window.location.search))
+    }
+  }, [])
+  
+  const apiBase = params?.get('api') || process.env.NEXT_PUBLIC_API_BASE_URL || ''
+  const token = params?.get('t') || (typeof window !== 'undefined' ? localStorage.getItem('xsourcing_token') || '' : '')
+  const projectId = params?.get('projectId') || null // For continuing from draft
+  const assignClientId = params?.get('clientId') || null // When used by advisor to create for a client
+  const nodeId = params?.get('nodeId') || null // For linking back to roadmap node
+  const mode = (params?.get('mode') as 'project'|'idea'|null) || 'project'
   
   // Debug logging
-  console.log('client-chat params:', { nodeId, projectId, assignClientId, mode, fullUrl: typeof window !== 'undefined' ? window.location.href : '' })
+  useEffect(() => {
+    console.log('client-chat params:', { nodeId, projectId, assignClientId, mode, fullUrl: typeof window !== 'undefined' ? window.location.href : '', searchParams: typeof window !== 'undefined' ? window.location.search : '' })
+  }, [nodeId, projectId, assignClientId, mode])
 
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
