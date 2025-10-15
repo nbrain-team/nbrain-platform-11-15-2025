@@ -17,6 +17,7 @@ type RoadmapNode = {
 export default function DashboardOverview() {
   const [projects, setProjects] = useState<Project[]>([])
   const [roadmapNodes, setRoadmapNodes] = useState<RoadmapNode[]>([])
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Set<number>>(new Set())
   const [ideas, setIdeas] = useState<Array<{ id: string; title: string; summary: string }>>([])
   const api = process.env.NEXT_PUBLIC_API_BASE_URL || ""
   const authHeaders = useMemo<HeadersInit | undefined>(() => {
@@ -24,6 +25,18 @@ export default function DashboardOverview() {
     return t ? { Authorization: `Bearer ${t}` } : undefined
   }, [])
   const token = useMemo(() => (typeof window !== 'undefined' ? localStorage.getItem('xsourcing_token') : null), [])
+  
+  const toggleDescription = (nodeId: number) => {
+    setExpandedDescriptions(prev => {
+      const next = new Set(prev)
+      if (next.has(nodeId)) {
+        next.delete(nodeId)
+      } else {
+        next.add(nodeId)
+      }
+      return next
+    })
+  }
 
   type Webinar = { id: number; title: string; datetime: string; duration?: string; description?: string; image_url?: string }
   const [webinars, setWebinars] = useState<Webinar[]>([])
@@ -261,24 +274,41 @@ export default function DashboardOverview() {
               No planned projects. <a href="/roadmap" className="text-[var(--color-primary)] underline">Add one</a> to your AI Ecosystem!
             </div>
           ) : (
-            plannedProjects.map(node => (
-              <div key={node.id} className="grid grid-cols-3 items-center gap-4 p-4 text-sm hover:bg-[var(--color-surface-alt)]">
-                <div className="font-medium text-[var(--color-text)]">
-                  {node.title}
+            plannedProjects.map(node => {
+              const description = node.description || 'No description yet'
+              const isExpanded = expandedDescriptions.has(node.id)
+              const shouldTruncate = description.length > 133
+              const displayDescription = shouldTruncate && !isExpanded 
+                ? description.substring(0, 133) + '...'
+                : description
+              
+              return (
+                <div key={node.id} className="grid grid-cols-3 items-start gap-4 p-4 text-sm hover:bg-[var(--color-surface-alt)]">
+                  <div className="font-medium text-[var(--color-text)]">
+                    {node.title}
+                  </div>
+                  <div className="text-[var(--color-text-muted)]">
+                    <span>{displayDescription}</span>
+                    {shouldTruncate && (
+                      <button
+                        onClick={() => toggleDescription(node.id)}
+                        className="ml-2 text-xs text-[var(--color-primary)] hover:underline font-medium"
+                      >
+                        {isExpanded ? 'Show less' : 'Show more'}
+                      </button>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <a 
+                      href={`/chat?projectName=${encodeURIComponent(node.title)}&nodeId=${node.id}`}
+                      className="rounded-md border border-[var(--color-primary)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-primary-700)] transition"
+                    >
+                      Scope with AI
+                    </a>
+                  </div>
                 </div>
-                <div className="text-[var(--color-text-muted)]">
-                  {node.description ? node.description.substring(0, 50) + (node.description.length > 50 ? '...' : '') : 'No description'}
-                </div>
-                <div className="text-right">
-                  <a 
-                    href={`/chat?projectName=${encodeURIComponent(node.title)}&nodeId=${node.id}`}
-                    className="rounded-md border border-[var(--color-primary)] bg-[var(--color-primary)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-primary-700)] transition"
-                  >
-                    Scope with AI
-                  </a>
-                </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </section>
