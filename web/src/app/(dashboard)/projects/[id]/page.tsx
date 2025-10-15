@@ -390,7 +390,7 @@ export default function ProjectScopePage({ params }: { params: { id: string } })
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
               idea.status === 'Draft' ? 'bg-gray-100 text-gray-600' :
               idea.status === 'Pending Advisor' ? 'bg-yellow-100 text-yellow-700' :
-              idea.status === 'Waiting Client Feedback' ? 'bg-orange-100 text-orange-700' :
+              idea.status === 'Waiting Client Feedback' ? 'bg-brand-100 text-brand-700' :
               idea.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
               'bg-[var(--color-primary-50)] text-[var(--color-primary)]'
             }`}>{idea.status}</span>

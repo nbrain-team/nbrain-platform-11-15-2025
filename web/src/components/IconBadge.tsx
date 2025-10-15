@@ -10,7 +10,7 @@ interface IconBadgeProps {
   boxed?: boolean // optional bordered container
 }
 
-// Renders a two-colored icon: navy stroke + small orange accent dot
+// Renders a two-colored icon: navy stroke + small brand color accent dot
 export function IconBadge({ icon: Icon, className, size = 56, boxed = false }: IconBadgeProps) {
   const iconSize = Math.floor(size * 0.55)
   return (

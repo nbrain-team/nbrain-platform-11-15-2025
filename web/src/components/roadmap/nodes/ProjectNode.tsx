@@ -7,7 +7,7 @@ export const ProjectNode = memo(({ data }: NodeProps) => {
       case 'completed': return 'bg-emerald-100 text-emerald-700 border-emerald-300'
       case 'in production': return 'bg-blue-100 text-blue-700 border-blue-300'
       case 'draft': return 'bg-gray-100 text-gray-600 border-gray-300'
-      case 'waiting client feedback': return 'bg-orange-100 text-orange-700 border-orange-300'
+      case 'waiting client feedback': return 'bg-brand-100 text-brand-700 border-brand-300'
       default: return 'bg-blue-100 text-blue-700 border-blue-300'
     }
   }

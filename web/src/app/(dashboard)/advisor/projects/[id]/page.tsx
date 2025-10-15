@@ -311,7 +311,7 @@ export default function AdvisorProjectDetailPage({ params }: { params: { id: str
 
   const statusBtnClass = (target: string) => (
     project.status === target
-      ? 'rounded-md border border-orange-200 bg-orange-50 px-3 py-1 text-xs text-orange-700 hover:bg-orange-50'
+      ? 'rounded-md border border-brand-200 bg-brand-50 px-3 py-1 text-xs text-brand-700 hover:bg-brand-50'
       : 'rounded-md border border-[var(--color-border)] bg-white px-3 py-1 text-xs hover:bg-[var(--color-surface-alt)]'
   )
 
@@ -333,7 +333,7 @@ export default function AdvisorProjectDetailPage({ params }: { params: { id: str
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
             project.status === 'Draft' ? 'bg-gray-100 text-gray-600' :
             project.status === 'Pending Advisor' ? 'bg-yellow-100 text-yellow-700' :
-            project.status === 'Waiting Client Feedback' ? 'bg-orange-100 text-orange-700' :
+            project.status === 'Waiting Client Feedback' ? 'bg-brand-100 text-brand-700' :
             project.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
             'bg-[var(--color-primary-50)] text-[var(--color-primary)]'
           }`}>{project.status}</span>

@@ -6,9 +6,9 @@
 
 /* Theme tokens based on styling-theme-instrucvtions.txt - Darker theme for better contrast */
 :root {
-  --color-primary: #F36A1D;
-  --color-primary-700: #D95712;
-  --color-primary-50: #FFF3E9;
+  --color-primary: #bc4a4b;
+  --color-primary-700: #9d3d3e;
+  --color-primary-50: #fef4f4;
   --color-bg: #F3F4F6;
   --color-text: #111111;
   --color-text-muted: #374151;
@@ -23,7 +23,7 @@
 /* Utilities derived from the theme doc */
 .btn-primary { background: var(--color-primary); color: #fff; padding: 12px 20px; border-radius: 10px; font-weight: 600; border: 1px solid transparent; transition: transform .02s ease, background .2s ease, box-shadow .2s ease; }
 .btn-primary:hover { background: var(--color-primary-700); }
-.btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(243,106,29,.25); }
+.btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(188,74,75,.25); }
 .btn-secondary { background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border); padding: 12px 20px; border-radius: 10px; font-weight: 600; }
 .link { color: var(--color-primary); text-decoration: underline; }
 .link:hover { text-decoration-thickness: 2px; }
@@ -33,6 +33,14 @@
 /* Section helpers */
 .section { padding-block: 6rem; }
 .section-lg { padding-block: 7.5rem; }
+
+/* Custom brand color utilities (replacing orange-* classes) */
+.bg-brand-50 { background-color: var(--color-primary-50); }
+.bg-brand-100 { background-color: #fce8e8; }
+.text-brand-700 { color: var(--color-primary-700); }
+.border-brand-200 { border-color: #f5d5d5; }
+.border-brand-300 { border-color: #eabebe; }
+.hover\:bg-brand-50:hover { background-color: var(--color-primary-50); }
 
 /* Marquee styles for Recent Projects */
 .marquee-track { display: flex; flex-direction: column; gap: 14px; }

@@ -74,7 +74,7 @@ export default function ProjectsPage() {
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
                 p.status === 'Draft' ? 'bg-gray-100 text-gray-600' :
                 p.status === 'Pending Advisor' ? 'bg-yellow-100 text-yellow-700' :
-                p.status === 'Waiting Client Feedback' ? 'bg-orange-100 text-orange-700' :
+                p.status === 'Waiting Client Feedback' ? 'bg-brand-100 text-brand-700' :
                 p.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' :
                 'bg-[var(--color-primary-50)] text-[var(--color-primary)]'
               }`}>{p.status}</span>
