@@ -2498,12 +2498,15 @@ app.post('/agent-ideas', auth(), async (req, res) => {
     );
     
     // Link the project back to the roadmap node if nodeId was provided
+    console.log('agent-ideas endpoint - checking nodeId linking:', { nodeId, finalProjectId, hasNodeId: !!nodeId, hasFinalProjectId: !!finalProjectId });
     if (nodeId && finalProjectId) {
-      await pool.query(
-        'update roadmap_nodes set project_id = $1, status = $2 where id = $3',
+      const linkResult = await pool.query(
+        'update roadmap_nodes set project_id = $1, status = $2 where id = $3 RETURNING id, title, project_id',
         [finalProjectId, 'in-progress', Number(nodeId)]
       );
-      console.log(`Linked project ${finalProjectId} to roadmap node ${nodeId}`);
+      console.log(`Linked project ${finalProjectId} to roadmap node ${nodeId}. Result:`, linkResult.rows[0]);
+    } else {
+      console.log('Skipping node linking - nodeId or finalProjectId missing:', { nodeId, finalProjectId, requestBody: req.body });
     }
     
     res.json({ ok: true, id, projectId: finalProjectId });
