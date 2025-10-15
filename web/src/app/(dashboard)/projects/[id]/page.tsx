@@ -464,15 +464,17 @@ export default function ProjectScopePage({ params }: { params: { id: string } })
             {editing.field === 'summary' ? null : <p className="mt-2 text-[var(--color-text-muted)]">{idea?.summary || '—'}</p>}
           </section>
           <section className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
-            <h3 className="text-lg font-semibold">Detailed Implementation Plan</h3>
+            <h3 className="text-lg font-semibold">What This Module Will Do</h3>
             <div className="mt-3 space-y-3">
               {(() => {
                 const stepsArr = Array.isArray(idea?.steps) ? idea?.steps : (idea?.steps ? [idea?.steps] : [])
                 return stepsArr.map((s, i) => {
                   const { title, body } = splitTitleBodyProj(s)
+                  // Remove any leading numbers from title to avoid duplication
+                  const cleanTitle = title.replace(/^[\d\.\)]+\s*/, '')
                   return (
-                  <div key={`${i}-${title}`} className="rounded-lg border border-[var(--color-border)] p-3">
-                      <div className="flex items-center gap-2"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-primary-50)] text-sm font-semibold text-[var(--color-primary)]">{i + 1}</span><span className="font-medium text-[var(--color-text)]">{title}</span></div>
+                  <div key={`${i}-${cleanTitle}`} className="rounded-lg border border-[var(--color-border)] p-3">
+                      <div className="flex items-center gap-2"><span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-primary-50)] text-sm font-semibold text-[var(--color-primary)]">{i + 1}</span><span className="font-medium text-[var(--color-text)]">{cleanTitle}</span></div>
                       {body && <p className="mt-1 text-sm text-[var(--color-text-muted)]">{body}</p>}
                       {!(rowEdit.field==='steps' && rowEdit.index===i) && (
                         <button aria-label="Edit item" title="Edit" className="mt-2 rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-alt)] self-end" onClick={()=>openRowEdit('steps', i, s)}>

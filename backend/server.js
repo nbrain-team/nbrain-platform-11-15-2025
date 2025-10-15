@@ -1692,18 +1692,20 @@ DEFAULT BUILD BASELINE (apply unless the user explicitly overrides):
 - Non-negotiable: All user instructions take precedence. If the user adds extra requirements mid-conversation, incorporate them into the final spec even if not previously prompted.
 
 DELIVERABLE SPEC CONTENTS:
-- Summary (problem, outcomes)
-- Detailed UI spec (Next.js + Tailwind structure, components, routes)
-- Step-by-step workflow and sequence diagrams
-- API design (endpoints, auth, request/response, errors)
-- Data model (DDL for PostgreSQL, indices)
-- Vector/RAG plan (if applicable: chunking, indexing, reranking, evaluation)
-- Model selection rationale (GPT-4o / Claude Opus / Gemini 2.5 Pro)
-- Security (authN/Z, PII, secrets)
-- Observability (logs/metrics/traces, dashboards)
-- Deployment (Render), environment variables, scaling, rollback
-- Test strategy (unit/integration/e2e)
-- Runbook (operations, incident response)
+- Summary: Comprehensive 4-6 sentence executive overview covering problem, solution, users, benefits, and ROI
+- Detailed UI spec (Next.js + Tailwind structure, components, routes) with extensive component descriptions
+- Step-by-step workflow: 6-8 detailed implementation steps, each with 3-4 sentences explaining technical details, data flows, integrations, and outcomes
+- API design (endpoints, auth, request/response, errors) with complete endpoint documentation
+- Data model (DDL for PostgreSQL, indices) with full schema and relationships
+- Vector/RAG plan (if applicable: chunking, indexing, reranking, evaluation) with specific configuration
+- Model selection rationale (GPT-4o / Claude Opus / Gemini 2.5 Pro) with detailed reasoning
+- Security (authN/Z, PII, secrets) with comprehensive threat modeling
+- Observability (logs/metrics/traces, dashboards) with specific monitoring strategies
+- Deployment (Render), environment variables, scaling, rollback with complete DevOps plan
+- Test strategy (unit/integration/e2e) with test scenarios
+- Runbook (operations, incident response) with procedures
+
+CRITICAL: Be extremely thorough and detailed in ALL sections. Each step should be 3-4 sentences minimum. The summary should be comprehensive and compelling. Every technical decision should be explained.
 
 Remember to:
 - Ask 2-3 focused questions at a time
@@ -1860,11 +1862,11 @@ Generate the specification with these sections:
 {
     "title": "Descriptive agent name",
     "agent_type": "one of: customer_service, data_analysis, content_creation, process_automation, or other",
-    "summary": "2-3 sentence overview of the agent's purpose and value",
+    "summary": "A comprehensive 4-6 sentence executive summary that covers: the core problem being solved, the target users and their pain points, the key capabilities and benefits of the solution, the expected business impact and ROI, and why this approach is superior to alternatives. Be specific and compelling.",
     "steps": [
-        "Clear, action-oriented description with sub-tasks and technical details for the first phase",
-        "Next step in the workflow with specific implementation details",
-        ...
+        "Step Title: Detailed 3-4 sentence description explaining exactly what happens in this step, what technologies are used, what data flows through the system, what user interactions occur, what business logic is executed, and what the expected outcomes are. Include specific technical implementation details, API endpoints, database operations, and error handling considerations.",
+        "Next Step Title: Another detailed 3-4 sentence explanation with the same level of thoroughness, covering all technical aspects, user workflows, data transformations, integration points, and success criteria for this phase.",
+        ... (minimum 6-8 comprehensive steps)
     ],
     "build_phases": [
         {
@@ -2161,9 +2163,14 @@ OTHER IMPORTANT NOTES:
 - ALWAYS include vector databases for long-term memory and training, even for simple use cases
 - ALWAYS include advanced retrieval (RAG/CAG/MCP) to ensure scalability
 - Provide detailed explanations for each technical choice
-- Include comprehensive security considerations
+- Include comprehensive security considerations with specific threat scenarios
 - Generate innovative future enhancement ideas that extend the core functionality
-- Be specific and detailed in all sections`;
+- Be specific and detailed in all sections
+- Each implementation step must be 3-4 sentences minimum with technical depth
+- Summary must be 4-6 sentences covering all key aspects
+- Provide at least 6-8 implementation steps (minimum)
+- Include specific code examples, API patterns, and data structures where relevant
+- Reference any company systems or context provided above for better alignment`;
       
       specContents.push({ role: 'user', parts: [{ text: specPrompt }] });
       
