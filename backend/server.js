@@ -1762,6 +1762,43 @@ app.post('/agent-ideator/chat', auth(), async (req, res) => {
 
     const genAI = new GoogleGenerativeAI(apiKey, { apiVersion: 'v1' });
     
+    // Fetch user's company context for personalization
+    let companyContext = '';
+    try {
+      const userProfile = await pool.query(
+        'SELECT company_name, company_description, website_url FROM users WHERE id = $1',
+        [req.user.id]
+      );
+      
+      const userSystems = await pool.query(
+        'SELECT name, description FROM user_systems WHERE user_id = $1 ORDER BY name',
+        [req.user.id]
+      );
+      
+      if (userProfile.rowCount > 0) {
+        const profile = userProfile.rows[0];
+        if (profile.company_name || profile.company_description) {
+          companyContext = '\n\nCOMPANY CONTEXT (use this to personalize recommendations):\n';
+          if (profile.company_name) companyContext += `Company: ${profile.company_name}\n`;
+          if (profile.company_description) companyContext += `About: ${profile.company_description}\n`;
+          if (profile.website_url) companyContext += `Website: ${profile.website_url}\n`;
+        }
+      }
+      
+      if (userSystems.rowCount > 0) {
+        companyContext += '\nExisting Systems/Software:\n';
+        userSystems.rows.forEach(sys => {
+          companyContext += `- ${sys.name}`;
+          if (sys.description) companyContext += `: ${sys.description}`;
+          companyContext += '\n';
+        });
+        companyContext += '\nWhen recommending integrations or technologies, consider these existing systems for better alignment.\n';
+      }
+    } catch (e) {
+      console.error('Error fetching company context:', e);
+      // Non-fatal - continue without context
+    }
+    
     // First message - return welcome message
     if (!message && conversation_history.length === 0) {
       const welcomeMessage = `Hey there! 👋 I'm here to help you ideate and create a scope for a new AI agent. 
@@ -2213,7 +2250,7 @@ OTHER IMPORTANT NOTES:
       // Regular conversation - continue gathering information
       const modelBase = {
         model: process.env.GEMINI_MODEL || 'gemini-2.5-pro',
-        systemInstruction: IDEATOR_SYSTEM_PROMPT,
+        systemInstruction: IDEATOR_SYSTEM_PROMPT + companyContext,
       };
 
       // Build contents from history
