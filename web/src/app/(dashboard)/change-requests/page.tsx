@@ -1,0 +1,410 @@
+"use client"
+import { useEffect, useMemo, useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
+type ChangeRequest = {
+  id: number
+  project_name: string
+  project_url: string | null
+  status: string
+  created_at: string
+  task_count?: number
+}
+
+type ChangeRequestTask = {
+  id: number
+  module_name: string
+  issue_description: string
+  file_path: string | null
+  file_name: string | null
+  completed: boolean
+}
+
+type Project = {
+  id: number
+  name: string
+}
+
+export default function ChangeRequestsPage() {
+  const [requests, setRequests] = useState<ChangeRequest[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
+  const [showCreateDialog, setShowCreateDialog] = useState(false)
+  const [selectedRequest, setSelectedRequest] = useState<number | null>(null)
+  const [tasks, setTasks] = useState<ChangeRequestTask[]>([])
+  
+  // Create request form
+  const [useExistingProject, setUseExistingProject] = useState(true)
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
+  const [customProjectName, setCustomProjectName] = useState("")
+  const [projectUrl, setProjectUrl] = useState("")
+  
+  // Add task form
+  const [moduleName, setModuleName] = useState("")
+  const [issueDescription, setIssueDescription] = useState("")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  
+  const api = process.env.NEXT_PUBLIC_API_BASE_URL || ""
+  const authHeaders = useMemo<HeadersInit | undefined>(() => {
+    const t = typeof window !== 'undefined' ? localStorage.getItem("xsourcing_token") : null
+    return t ? { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' } : undefined
+  }, [])
+
+  useEffect(() => {
+    loadRequests()
+    loadProjects()
+  }, [])
+
+  const loadRequests = async () => {
+    try {
+      const res = await fetch(`${api}/change-requests`, { headers: authHeaders }).then(r => r.json())
+      if (res.ok) setRequests(res.requests)
+    } catch (e) {
+      console.error('Failed to load requests:', e)
+    }
+  }
+
+  const loadProjects = async () => {
+    try {
+      const res = await fetch(`${api}/client/projects`, { headers: authHeaders }).then(r => r.json())
+      if (res.ok) setProjects(res.projects)
+    } catch (e) {
+      console.error('Failed to load projects:', e)
+    }
+  }
+
+  const createRequest = async () => {
+    try {
+      const projectName = useExistingProject && selectedProjectId
+        ? projects.find(p => p.id === selectedProjectId)?.name
+        : customProjectName
+
+      if (!projectName) {
+        alert('Please select a project or enter a project name')
+        return
+      }
+
+      const res = await fetch(`${api}/change-requests`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          projectId: useExistingProject ? selectedProjectId : null,
+          projectName,
+          projectUrl
+        })
+      }).then(r => r.json())
+
+      if (res.ok) {
+        setSelectedRequest(res.request.id)
+        setShowCreateDialog(false)
+        loadRequests()
+        // Reset form
+        setSelectedProjectId(null)
+        setCustomProjectName("")
+        setProjectUrl("")
+      }
+    } catch (e) {
+      console.error('Failed to create request:', e)
+    }
+  }
+
+  const loadRequestTasks = async (requestId: number) => {
+    try {
+      const res = await fetch(`${api}/change-requests/${requestId}`, { headers: authHeaders }).then(r => r.json())
+      if (res.ok) {
+        setTasks(res.tasks)
+        setSelectedRequest(requestId)
+      }
+    } catch (e) {
+      console.error('Failed to load tasks:', e)
+    }
+  }
+
+  const addTask = async () => {
+    if (!selectedRequest || !moduleName || !issueDescription) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    try {
+      let fileData = null
+      if (selectedFile) {
+        const reader = new FileReader()
+        fileData = await new Promise<string>((resolve) => {
+          reader.onloadend = () => resolve((reader.result as string).split(',')[1])
+          reader.readAsDataURL(selectedFile)
+        })
+      }
+
+      const res = await fetch(`${api}/change-requests/${selectedRequest}/tasks`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          moduleName,
+          issueDescription,
+          fileName: selectedFile?.name,
+          fileData
+        })
+      }).then(r => r.json())
+
+      if (res.ok) {
+        loadRequestTasks(selectedRequest)
+        // Reset form
+        setModuleName("")
+        setIssueDescription("")
+        setSelectedFile(null)
+      }
+    } catch (e) {
+      console.error('Failed to add task:', e)
+    }
+  }
+
+  const deleteTask = async (taskId: number) => {
+    if (!selectedRequest || !confirm('Delete this task?')) return
+
+    try {
+      await fetch(`${api}/change-requests/${selectedRequest}/tasks/${taskId}`, {
+        method: 'DELETE',
+        headers: authHeaders
+      })
+      loadRequestTasks(selectedRequest)
+    } catch (e) {
+      console.error('Failed to delete task:', e)
+    }
+  }
+
+  const downloadMarkdown = (requestId: number) => {
+    window.open(`${api}/change-requests/${requestId}/export`, '_blank')
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-[var(--color-text)]">Submit Change Requests</h1>
+          <p className="text-sm text-[var(--color-text-muted)]">Document QC issues and generate Cursor-friendly packages for your development team</p>
+        </div>
+        <button onClick={() => setShowCreateDialog(true)} className="btn-primary">
+          + Create New Request
+        </button>
+      </div>
+
+      {/* List of change requests */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {requests.map(request => (
+          <div
+            key={request.id}
+            className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card hover:shadow-xl transition cursor-pointer"
+            onClick={() => loadRequestTasks(request.id)}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="font-semibold text-[var(--color-text)]">{request.project_name}</h3>
+              <span className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                request.status === 'open' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
+              }`}>
+                {request.status}
+              </span>
+            </div>
+            <div className="text-xs text-[var(--color-text-muted)]">
+              {new Date(request.created_at).toLocaleDateString()}
+            </div>
+          </div>
+        ))}
+        
+        {requests.length === 0 && (
+          <div className="col-span-full rounded-xl border-2 border-dashed border-[var(--color-border)] p-12 text-center text-[var(--color-text-muted)]">
+            No change requests yet. Click "Create New Request" to get started.
+          </div>
+        )}
+      </div>
+
+      {/* Selected request - task management */}
+      {selectedRequest && (
+        <div className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-[var(--color-text)]">
+              {requests.find(r => r.id === selectedRequest)?.project_name} - Tasks
+            </h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => downloadMarkdown(selectedRequest)}
+                className="rounded-md border border-[var(--color-primary)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--color-primary-700)]"
+              >
+                Download Cursor Package
+              </button>
+              <button
+                onClick={() => setSelectedRequest(null)}
+                className="btn-secondary text-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+
+          {/* Task list */}
+          <div className="space-y-4 mb-6">
+            {tasks.map((task, index) => (
+              <div key={task.id} className="rounded-lg border border-[var(--color-border)] p-4 bg-[var(--color-surface-alt)]">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-primary-50)] text-xs font-semibold text-[var(--color-primary)]">
+                        {index + 1}
+                      </span>
+                      <span className="font-semibold text-[var(--color-text)]">{task.module_name}</span>
+                    </div>
+                    <p className="text-sm text-[var(--color-text-muted)] ml-8">{task.issue_description}</p>
+                    {task.file_name && (
+                      <div className="mt-2 ml-8 text-xs text-[var(--color-text-muted)]">
+                        File: {task.file_name}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => deleteTask(task.id)}
+                    className="text-sm text-red-600 hover:text-red-700 font-medium"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Add new task form */}
+          <div className="rounded-lg border-2 border-[var(--color-primary)] bg-[var(--color-primary-50)] p-4">
+            <h3 className="font-semibold text-[var(--color-text)] mb-3">Add New Task/Issue</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+                  Module / Function Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                  value={moduleName}
+                  onChange={e => setModuleName(e.target.value)}
+                  placeholder="e.g., Profile Page, Login Component, API Endpoint"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+                  Describe Issue <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                  value={issueDescription}
+                  onChange={e => setIssueDescription(e.target.value)}
+                  placeholder="Describe what's wrong and what should be fixed..."
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+                  Upload Screenshot or File (Optional)
+                </label>
+                <input
+                  type="file"
+                  className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                  onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+                  accept="image/*,.pdf,.doc,.docx"
+                />
+              </div>
+              <button onClick={addTask} className="btn-primary w-full">
+                Add Task to Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create request dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create New Change Request</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <div className="flex gap-4 mb-3">
+                <button
+                  onClick={() => setUseExistingProject(true)}
+                  className={`flex-1 rounded-md border px-4 py-2 text-sm font-medium transition ${
+                    useExistingProject
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary-50)] text-[var(--color-primary)]'
+                      : 'border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
+                  }`}
+                >
+                  Existing Project
+                </button>
+                <button
+                  onClick={() => setUseExistingProject(false)}
+                  className={`flex-1 rounded-md border px-4 py-2 text-sm font-medium transition ${
+                    !useExistingProject
+                      ? 'border-[var(--color-primary)] bg-[var(--color-primary-50)] text-[var(--color-primary)]'
+                      : 'border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
+                  }`}
+                >
+                  Custom Project
+                </button>
+              </div>
+
+              {useExistingProject ? (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+                    Select Project <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                    value={selectedProjectId || ''}
+                    onChange={e => setSelectedProjectId(Number(e.target.value))}
+                  >
+                    <option value="">Choose a project...</option>
+                    {projects.map(p => (
+                      <option key={p.id} value={p.id}>
+                        PRJ-{String(p.id).padStart(4, '0')} - {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+                    Project Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                    value={customProjectName}
+                    onChange={e => setCustomProjectName(e.target.value)}
+                    placeholder="Enter project name"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+                Project URL (Optional)
+              </label>
+              <input
+                className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                value={projectUrl}
+                onChange={e => setProjectUrl(e.target.value)}
+                placeholder="https://example.com"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={createRequest} className="btn-primary flex-1">
+                Create Request
+              </button>
+              <button onClick={() => setShowCreateDialog(false)} className="btn-secondary">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+

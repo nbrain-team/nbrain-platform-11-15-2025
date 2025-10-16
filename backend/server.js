@@ -4215,6 +4215,215 @@ app.post('/public/reset-password', async (req, res) => {
 });
 
 // ===========================
+// CHANGE REQUESTS (QC) ENDPOINTS
+// ===========================
+
+// Get all change requests for current user
+app.get('/change-requests', auth(), async (req, res) => {
+  try {
+    const query = req.user.role === 'advisor'
+      ? 'SELECT cr.*, u.name as created_by_name FROM change_requests cr JOIN users u ON cr.created_by = u.id WHERE cr.created_by = $1 ORDER BY cr.created_at DESC'
+      : 'SELECT cr.*, u.name as created_by_name FROM change_requests cr JOIN users u ON cr.created_by = u.id JOIN projects p ON cr.project_id = p.id WHERE p.client_id = $1 ORDER BY cr.created_at DESC';
+    
+    const result = await pool.query(query, [req.user.id]);
+    res.json({ ok: true, requests: result.rows });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Get single change request with tasks
+app.get('/change-requests/:id', auth(), async (req, res) => {
+  try {
+    const requestId = Number(req.params.id);
+    
+    const request = await pool.query(
+      'SELECT cr.*, u.name as created_by_name FROM change_requests cr JOIN users u ON cr.created_by = u.id WHERE cr.id = $1',
+      [requestId]
+    );
+    
+    if (request.rowCount === 0) {
+      return res.status(404).json({ ok: false, error: 'Request not found' });
+    }
+    
+    const tasks = await pool.query(
+      'SELECT * FROM change_request_tasks WHERE request_id = $1 ORDER BY sort_order, id',
+      [requestId]
+    );
+    
+    res.json({ ok: true, request: request.rows[0], tasks: tasks.rows });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Create new change request
+app.post('/change-requests', auth(), async (req, res) => {
+  try {
+    const { projectId, projectName, projectUrl } = req.body;
+    
+    if (!projectName) {
+      return res.status(400).json({ ok: false, error: 'Project name is required' });
+    }
+    
+    const result = await pool.query(
+      'INSERT INTO change_requests (created_by, project_id, project_name, project_url, status) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [req.user.id, projectId || null, projectName, projectUrl || null, 'open']
+    );
+    
+    res.json({ ok: true, request: result.rows[0] });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Add task to change request
+app.post('/change-requests/:id/tasks', auth(), async (req, res) => {
+  try {
+    const requestId = Number(req.params.id);
+    const { moduleName, issueDescription, fileName, fileData } = req.body;
+    
+    if (!moduleName || !issueDescription) {
+      return res.status(400).json({ ok: false, error: 'Module name and issue description are required' });
+    }
+    
+    // Handle file upload if provided
+    let filePath = null;
+    if (fileData && fileName) {
+      // Save file to uploads directory
+      const fs = require('fs');
+      const path = require('path');
+      const uploadsDir = path.join(__dirname, 'uploads', 'change-requests');
+      
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      
+      const timestamp = Date.now();
+      const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fullFileName = `${timestamp}-${sanitizedFileName}`;
+      filePath = path.join(uploadsDir, fullFileName);
+      
+      const buffer = Buffer.from(fileData, 'base64');
+      fs.writeFileSync(filePath, buffer);
+      
+      // Store relative path
+      filePath = `uploads/change-requests/${fullFileName}`;
+    }
+    
+    const result = await pool.query(
+      'INSERT INTO change_request_tasks (request_id, module_name, issue_description, file_path, file_name) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [requestId, moduleName, issueDescription, filePath, fileName || null]
+    );
+    
+    res.json({ ok: true, task: result.rows[0] });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Delete task
+app.delete('/change-requests/:requestId/tasks/:taskId', auth(), async (req, res) => {
+  try {
+    const taskId = Number(req.params.taskId);
+    
+    await pool.query('DELETE FROM change_request_tasks WHERE id = $1', [taskId]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Mark request as complete
+app.put('/change-requests/:id/complete', auth(), async (req, res) => {
+  try {
+    const requestId = Number(req.params.id);
+    
+    await pool.query(
+      'UPDATE change_requests SET status = $1, updated_at = NOW() WHERE id = $2',
+      ['completed', requestId]
+    );
+    
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Generate Cursor-optimized markdown export
+app.get('/change-requests/:id/export', auth(), async (req, res) => {
+  try {
+    const requestId = Number(req.params.id);
+    
+    const request = await pool.query(
+      'SELECT * FROM change_requests WHERE id = $1',
+      [requestId]
+    );
+    
+    if (request.rowCount === 0) {
+      return res.status(404).json({ ok: false, error: 'Request not found' });
+    }
+    
+    const tasks = await pool.query(
+      'SELECT * FROM change_request_tasks WHERE request_id = $1 ORDER BY sort_order, id',
+      [requestId]
+    );
+    
+    const req_data = request.rows[0];
+    
+    // Generate markdown content optimized for Cursor
+    let markdown = `# Change Request: ${req_data.project_name}\n\n`;
+    markdown += `**Created:** ${new Date(req_data.created_at).toLocaleDateString()}\n`;
+    if (req_data.project_url) markdown += `**Project URL:** ${req_data.project_url}\n`;
+    markdown += `\n---\n\n`;
+    markdown += `## Issues to Address\n\n`;
+    markdown += `This document contains ${tasks.rowCount} change request(s) for the project "${req_data.project_name}".\n\n`;
+    markdown += `### Instructions for Cursor AI:\n`;
+    markdown += `- Each task below describes a specific issue that needs to be fixed\n`;
+    markdown += `- Reference screenshots are located in the paths specified\n`;
+    markdown += `- Make all changes according to the descriptions provided\n`;
+    markdown += `- Check off each item as you complete it\n\n`;
+    markdown += `---\n\n`;
+    
+    tasks.rows.forEach((task, index) => {
+      markdown += `## Task ${index + 1}: ${task.module_name}\n\n`;
+      markdown += `**Status:** [ ] Not Started\n\n`;
+      markdown += `**Issue Description:**\n${task.issue_description}\n\n`;
+      
+      if (task.file_path) {
+        markdown += `**Reference File:**\n`;
+        markdown += `\`${task.file_path}\`\n\n`;
+        markdown += `![Screenshot](${task.file_path})\n\n`;
+      }
+      
+      markdown += `**Steps to Complete:**\n`;
+      markdown += `1. [ ] Locate the module/component: \`${task.module_name}\`\n`;
+      markdown += `2. [ ] Review the issue description above\n`;
+      markdown += `3. [ ] ${task.file_path ? 'Reference the screenshot/file' : 'Make the necessary changes'}\n`;
+      markdown += `4. [ ] Test the changes\n`;
+      markdown += `5. [ ] Mark this task as complete\n\n`;
+      markdown += `---\n\n`;
+    });
+    
+    markdown += `## Completion Checklist\n\n`;
+    tasks.rows.forEach((task, index) => {
+      markdown += `- [ ] Task ${index + 1}: ${task.module_name}\n`;
+    });
+    
+    markdown += `\n## Final Steps\n\n`;
+    markdown += `- [ ] All tasks completed\n`;
+    markdown += `- [ ] Changes tested\n`;
+    markdown += `- [ ] Ready for review\n`;
+    
+    res.setHeader('Content-Type', 'text/markdown');
+    res.setHeader('Content-Disposition', `attachment; filename="change-request-${requestId}.md"`);
+    res.send(markdown);
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ===========================
 // AI ADOPTION ROADMAP ENDPOINTS
 // ===========================
 
