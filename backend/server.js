@@ -4350,7 +4350,25 @@ app.put('/change-requests/:id/complete', auth(), async (req, res) => {
   }
 });
 
-// Generate Cursor-optimized markdown export
+// Serve uploaded change request files
+app.get('/change-requests/files/:filename', auth(), async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(__dirname, 'uploads', 'change-requests', filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ ok: false, error: 'File not found' });
+    }
+    
+    res.sendFile(filePath);
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Generate Cursor-optimized markdown export with absolute URLs
 app.get('/change-requests/:id/export', auth(), async (req, res) => {
   try {
     const requestId = Number(req.params.id);
@@ -4371,6 +4389,9 @@ app.get('/change-requests/:id/export', auth(), async (req, res) => {
     
     const req_data = request.rows[0];
     
+    // Get base URL from request or environment
+    const baseUrl = process.env.BASE_URL || req.headers.origin || 'https://nbrain-platform-backend.onrender.com';
+    
     // Generate markdown content optimized for Cursor
     let markdown = `# Change Request: ${req_data.project_name}\n\n`;
     markdown += `**Created:** ${new Date(req_data.created_at).toLocaleDateString()}\n`;
@@ -4380,7 +4401,7 @@ app.get('/change-requests/:id/export', auth(), async (req, res) => {
     markdown += `This document contains ${tasks.rowCount} change request(s) for the project "${req_data.project_name}".\n\n`;
     markdown += `### Instructions for Cursor AI:\n`;
     markdown += `- Each task below describes a specific issue that needs to be fixed\n`;
-    markdown += `- Reference screenshots are located in the paths specified\n`;
+    markdown += `- Screenshots are embedded below with full URLs\n`;
     markdown += `- Make all changes according to the descriptions provided\n`;
     markdown += `- Check off each item as you complete it\n\n`;
     markdown += `---\n\n`;
@@ -4390,18 +4411,23 @@ app.get('/change-requests/:id/export', auth(), async (req, res) => {
       markdown += `**Status:** [ ] Not Started\n\n`;
       markdown += `**Issue Description:**\n${task.issue_description}\n\n`;
       
-      if (task.file_path) {
-        markdown += `**Reference File:**\n`;
-        markdown += `\`${task.file_path}\`\n\n`;
-        markdown += `![Screenshot](${task.file_path})\n\n`;
+      if (task.file_path && task.file_name) {
+        // Extract just the filename from the path
+        const filename = task.file_path.split('/').pop();
+        const imageUrl = `${baseUrl}/change-requests/files/${filename}`;
+        
+        markdown += `**Reference Screenshot:**\n`;
+        markdown += `${imageUrl}\n\n`;
+        markdown += `![Screenshot](${imageUrl})\n\n`;
+        markdown += `> **Note:** Right-click the image above to open in a new tab if it doesn't display in Cursor.\n\n`;
       }
       
       markdown += `**Steps to Complete:**\n`;
       markdown += `1. [ ] Locate the module/component: \`${task.module_name}\`\n`;
       markdown += `2. [ ] Review the issue description above\n`;
-      markdown += `3. [ ] ${task.file_path ? 'Reference the screenshot/file' : 'Make the necessary changes'}\n`;
+      markdown += `3. [ ] ${task.file_path ? 'Reference the screenshot' : 'Make the necessary changes'}\n`;
       markdown += `4. [ ] Test the changes\n`;
-      markdown += `5. [ ] Mark this task as complete\n\n`;
+      markdown += `5. [ ] Mark this task as complete below\n\n`;
       markdown += `---\n\n`;
     });
     
