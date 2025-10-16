@@ -321,6 +321,7 @@ export default function ChangeRequestsPage() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Create New Change Request</DialogTitle>
+            <p className="text-sm text-[var(--color-text-muted)]">Select a project and add QC tasks with screenshots</p>
           </DialogHeader>
           
           <div className="space-y-4">
