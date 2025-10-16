@@ -172,8 +172,30 @@ export default function ChangeRequestsPage() {
     }
   }
 
-  const downloadMarkdown = (requestId: number) => {
-    window.open(`${api}/change-requests/${requestId}/export`, '_blank')
+  const downloadMarkdown = async (requestId: number) => {
+    try {
+      const res = await fetch(`${api}/change-requests/${requestId}/export`, {
+        headers: authHeaders
+      })
+      
+      if (!res.ok) {
+        alert('Failed to download: ' + (await res.text()))
+        return
+      }
+      
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `change-request-${requestId}.md`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (e) {
+      console.error('Download error:', e)
+      alert('Failed to download package')
+    }
   }
 
   return (
