@@ -158,6 +158,29 @@ export default function AdminPage() {
     if (!res.ok) { alert(res.error || 'Failed'); return }
     alert('Assigned!')
   }
+  
+  const deleteUser = async (userId: number, role: 'client' | 'advisor') => {
+    const userName = role === 'client' 
+      ? clients.find(c => c.id === userId)?.name 
+      : advisors.find(a => a.id === userId)?.name
+    
+    if (!confirm(`Delete ${role} "${userName}"? This action cannot be undone and will delete all associated data.`)) {
+      return
+    }
+    
+    try {
+      const res = await fetch(`${api}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: authHeaders
+      }).then(r => r.json())
+      
+      if (!res.ok) throw new Error(res.error || 'Failed to delete user')
+      
+      await fetchLists()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to delete user')
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -178,12 +201,22 @@ export default function AdminPage() {
             {clients.map(u => (
               <div 
                 key={u.id} 
-                className="grid grid-cols-[60px_1fr_1fr] items-center gap-3 p-2 text-sm cursor-pointer hover:bg-[var(--color-surface-alt)] transition"
-                onClick={() => openEditClient(u.id)}
+                className="grid grid-cols-[60px_1fr_1fr_80px] items-center gap-3 p-2 text-sm group hover:bg-[var(--color-surface-alt)] transition"
               >
                 <div className="text-xs text-[var(--color-text-muted)]">#{u.id}</div>
-                <div className="font-medium">{u.name}</div>
-                <div className="text-[var(--color-text-muted)]">{u.email}</div>
+                <div className="font-medium cursor-pointer" onClick={() => openEditClient(u.id)}>{u.name}</div>
+                <div className="text-[var(--color-text-muted)] cursor-pointer" onClick={() => openEditClient(u.id)}>{u.email}</div>
+                <div className="text-right">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteUser(u.id, 'client')
+                    }}
+                    className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
             {clients.length === 0 && <div className="p-2 text-sm text-[var(--color-text-muted)]">No clients.</div>}
@@ -197,10 +230,21 @@ export default function AdminPage() {
           </div>
           <div className="divide-y">
             {advisors.map(u => (
-              <div key={u.id} className="grid grid-cols-[60px_1fr_1fr] items-center gap-3 p-2 text-sm">
+              <div key={u.id} className="grid grid-cols-[60px_1fr_1fr_80px] items-center gap-3 p-2 text-sm group hover:bg-[var(--color-surface-alt)] transition">
                 <div className="text-xs text-[var(--color-text-muted)]">#{u.id}</div>
                 <div className="font-medium">{u.name}</div>
                 <div className="text-[var(--color-text-muted)]">{u.email}</div>
+                <div className="text-right">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteUser(u.id, 'advisor')
+                    }}
+                    className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
             {advisors.length === 0 && <div className="p-2 text-sm text-[var(--color-text-muted)]">No advisors.</div>}
