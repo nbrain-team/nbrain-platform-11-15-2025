@@ -115,8 +115,13 @@ export default function RoadmapPage() {
       
       // Construct URL based on role and selected client
       let url = `${api}/roadmap`
+      console.log('loadRoadmap called with:', { userRole, selectedClientId })
+      
       if (userRole === 'advisor' && selectedClientId) {
         url = `${api}/advisor/clients/${selectedClientId}/roadmap`
+        console.log('Using advisor endpoint for client:', selectedClientId)
+      } else {
+        console.log('Using client endpoint (userRole:', userRole, ', selectedClientId:', selectedClientId, ')')
       }
       
       console.log('Loading roadmap from:', url)
@@ -180,7 +185,7 @@ export default function RoadmapPage() {
     } finally {
       setLoading(false)
     }
-  }, [api, authHeaders, setNodes, setEdges])
+  }, [api, authHeaders, setNodes, setEdges, userRole, selectedClientId])
 
   // Load roadmap data on mount and when selected client changes
   useEffect(() => {
