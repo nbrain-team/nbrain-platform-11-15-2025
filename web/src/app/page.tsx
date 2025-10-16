@@ -8,7 +8,7 @@ import { AdvisorRequestDialog } from "@/components/AdvisorRequestDialog";
 import TopWebinarBanner from "@/components/TopWebinarBanner";
 import { ClientSignupDialog } from "@/components/ClientSignupDialog";
 import Link from "next/link";
-import { Users, PackageCheck, Rocket, Building2, Pentagon, Scale, Headset, Handshake, Globe, Sparkles, Settings2, Cpu, MessageSquare, ClipboardList, PlayCircle, LogIn, Star, DollarSign } from "lucide-react";
+import { Users, PackageCheck, Rocket, Building2, Pentagon, Scale, Headset, Handshake, Globe, Sparkles, Settings2, Cpu, MessageSquare, ClipboardList, PlayCircle, LogIn, Star, DollarSign, Shield } from "lucide-react";
 
 export default function Home() {
   const [chatOpen, setChatOpen] = useState(false);
@@ -174,7 +174,7 @@ export default function Home() {
           <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {([
               { icon: PackageCheck, title: 'Zero Hallucination', desc: 'Our models are trained on your data, ensuring answers are precise and free from hallucinations.' },
-              { icon: ShieldIcon, title: 'Private & Owned', desc: 'Your AI, your rules. We build secure systems where you own the data and the models.' },
+              { icon: Shield, title: 'Private & Owned', desc: 'Your AI, your rules. We build secure systems where you own the data and the models.' },
               { icon: Globe, title: 'Integrates Anywhere', desc: 'From CRMs to legacy systems, our AI solutions are built to connect with your stack instantly.' },
               { icon: Sparkles, title: 'Future Ready', desc: 'Designed for what\'s next—scalable AI built to evolve with your business goals.' },
             ] as const).map((item, i) => (
