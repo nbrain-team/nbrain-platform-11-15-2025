@@ -686,6 +686,18 @@ app.post('/admin/users', auth('admin'), async (req, res) => {
     // Hash the password before storing
     const hashedPassword = await bcrypt.hash(password, 10);
     
+    // Check if username or email already exists
+    const existing = await pool.query('SELECT username, email FROM users WHERE username = $1 OR email = $2', [username, email]);
+    if (existing.rowCount > 0) {
+      const existingUser = existing.rows[0];
+      if (existingUser.username === username) {
+        return res.status(400).json({ ok: false, error: `Username "${username}" is already taken. Please choose a different username.` });
+      }
+      if (existingUser.email === email) {
+        return res.status(400).json({ ok: false, error: `Email "${email}" is already registered. Please use a different email.` });
+      }
+    }
+    
     const r = await pool.query('insert into users(role,name,email,username,password,company_name,website_url,phone) values($1,$2,$3,$4,$5,$6,$7,$8) returning id', [role, name, email, username, hashedPassword, companyName || null, websiteUrl || null, phone || null]);
     const id = r.rows[0].id;
     if (role === 'client' && advisorId) {

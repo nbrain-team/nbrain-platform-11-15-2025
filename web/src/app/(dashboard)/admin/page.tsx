@@ -80,7 +80,14 @@ export default function AdminPage() {
   }
 
   const submitAdd = async () => {
+    // Validate required fields
+    if (!name || !email || !username || !password) {
+      setError('Please fill in all required fields')
+      return
+    }
+    
     setSaving(true)
+    setError('')
     try {
       const payload: Record<string, unknown> = { role: addRole, name, email, username, password }
       if (addRole === 'client') {
@@ -97,6 +104,7 @@ export default function AdminPage() {
       }).then(r => r.json())
       if (!res.ok) throw new Error(res.error || 'Failed creating user')
       setAddOpen(false)
+      setError('')
       await fetchLists()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed creating user')
