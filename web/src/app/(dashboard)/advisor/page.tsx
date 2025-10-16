@@ -114,10 +114,14 @@ export default function AdvisorPage() {
         <div className="mb-3 text-lg font-semibold">Assigned Clients</div>
         <div className="flex flex-wrap gap-2">
           {clients.map(c => (
-            <div key={c.id} className="flex items-center gap-2">
-              <button onClick={() => setSelected(c.id)} className={`rounded-full border px-3 py-1 text-sm ${selected===c.id ? 'bg-[var(--color-primary-50)] text-[var(--color-primary)]' : 'bg-white'}`}>{c.name}</button>
-              <Link href={`/advisor/clients/${c.id}`} className="text-sm text-[var(--color-primary)] underline">View Details</Link>
-            </div>
+            <Link 
+              key={c.id}
+              href={`/advisor/clients/${c.id}`}
+              onClick={() => setSelected(c.id)}
+              className={`rounded-full border px-3 py-1 text-sm cursor-pointer transition hover:shadow-md ${selected===c.id ? 'bg-[var(--color-primary-50)] text-[var(--color-primary)] border-[var(--color-primary)]' : 'bg-white hover:bg-gray-50'}`}
+            >
+              {c.name}
+            </Link>
           ))}
           {clients.length===0 && <div className="text-sm text-[var(--color-text-muted)]">No clients assigned.</div>}
         </div>
