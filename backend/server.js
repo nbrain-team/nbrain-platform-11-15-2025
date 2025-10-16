@@ -718,6 +718,52 @@ app.delete('/admin/users/:id', auth('admin'), async (req, res) => {
   }
 });
 
+// Get advisors assigned to a client
+app.get('/admin/clients/:id/advisors', auth('admin'), async (req, res) => {
+  try {
+    const clientId = Number(req.params.id);
+    
+    const result = await pool.query(
+      `SELECT u.id, u.name, u.email, u.phone 
+       FROM users u 
+       JOIN advisor_clients ac ON u.id = ac.advisor_id 
+       WHERE ac.client_id = $1`,
+      [clientId]
+    );
+    
+    res.json({ ok: true, advisors: result.rows });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Update advisors assigned to a client
+app.put('/admin/clients/:id/advisors', auth('admin'), async (req, res) => {
+  try {
+    const clientId = Number(req.params.id);
+    const { advisorIds } = req.body;
+    
+    if (!Array.isArray(advisorIds)) {
+      return res.status(400).json({ ok: false, error: 'advisorIds must be an array' });
+    }
+    
+    // Remove all existing assignments
+    await pool.query('DELETE FROM advisor_clients WHERE client_id = $1', [clientId]);
+    
+    // Add new assignments
+    for (const advisorId of advisorIds) {
+      await pool.query(
+        'INSERT INTO advisor_clients (advisor_id, client_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [advisorId, clientId]
+      );
+    }
+    
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // Get single client with advisor info
 app.get('/admin/clients/:id', auth('admin'), async (req, res) => {
   try {
