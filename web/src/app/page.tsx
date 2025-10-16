@@ -41,12 +41,12 @@ export default function Home() {
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="container mx-auto flex items-center justify-between px-6 py-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/hyah-logo.png" alt="Hyah! AI" className="h-10 w-auto" />
+          <img src="/nbrain-2025-logo.png" alt="nBrain" className="h-10 w-auto" />
           <nav className="flex items-center gap-6 text-sm font-semibold text-[var(--color-text)]">
-            <a href="#why" className="hover:text-[var(--color-primary)]">Why Hyah! AI</a>
-            <a href="#how" className="hover:text-[var(--color-primary)]">How It Works</a>
-            <a href="#membership" className="hover:text-[var(--color-primary)]">Membership Details</a>
-            <a href="#membership" className="hover:text-[var(--color-primary)]">Contact Us</a>
+            <a href="#benefits" className="hover:text-[var(--color-primary)]">Benefits</a>
+            <a href="#process" className="hover:text-[var(--color-primary)]">Our Process</a>
+            <a href="#work-together" className="hover:text-[var(--color-primary)]">Working With Us</a>
+            <a href="#examples" className="hover:text-[var(--color-primary)]">Project Examples</a>
             <Link href="/login" aria-label="Login" title="Login" className="ml-2 inline-flex items-center rounded-full border border-[var(--color-border)] p-2 hover:bg-[var(--color-surface-alt)]">
               <LogIn className="size-4" />
             </Link>
@@ -57,14 +57,13 @@ export default function Home() {
       <section className="relative bg-white">
         <div className="container mx-auto grid grid-cols-1 gap-6 px-6 py-20 md:grid-cols-2 md:items-center md:gap-8 xl:gap-10">
           <div>
-          <div className="inline-block rounded-md bg-[var(--color-primary-50)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">AI-Powered Outsourcing:</div>
+          <div className="inline-block rounded-md bg-[var(--color-primary-50)] px-3 py-1 text-sm font-semibold text-[var(--color-primary)]">Custom Built Advanced AI</div>
           <h1 className="mt-4 max-w-[680px] text-[clamp(18px,2.4vw,40px)] font-semibold leading-tight text-[var(--color-text)]">
-            <span className="block">Our Team Of Senior AI Operators</span>
-            <span className="block">Become Your Instant-On Production</span>
-            <span className="block">Team with Super Human Capabilities.</span>
+            <span className="block">We Amplify Your</span>
+            <span className="block">People & Processes</span>
           </h1>
           <div className="mt-4 max-w-[560px]">
-            <p className="text-lg text-[var(--color-text-muted)]">Cut costs by 80–90% and finish projects in days, not months. You assign tasks, your advisor scopes them, and AI does the heavy lift. Better quality, faster turnaround, at single-digit effective rates.</p>
+            <p className="text-lg text-[var(--color-text-muted)]">Get all of the power of AI, control it, own it. Cheaper than SaaS. Launch AI in days, not months with custom-built solutions that adapt to your business.</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
             {/* AI Ideation Agent modal */}
             <Dialog open={chatOpen} onOpenChange={setChatOpen}>
@@ -149,28 +148,45 @@ export default function Home() {
 
       
 
-      {/* Why AI-Powered Production Outsourcing (hero-style with stats) */}
-      <section id="why" className="bg-white py-20">
+      {/* Core Value Props */}
+      <section id="benefits" className="bg-white py-20">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-4xl font-semibold leading-tight text-[var(--color-text)]">Why Choose Hyah! AI</h2>
-          <p className="mx-auto mt-3 max-w-3xl text-[var(--color-text-muted)]">Advisor‑led planning with AI execution gives you speed, quality, and cost efficiency without changing your stack.</p>
+          <h2 className="text-4xl font-semibold leading-tight text-[var(--color-text)]">Custom AI Solves Your AI Issues</h2>
+          <p className="mx-auto mt-3 max-w-3xl text-[var(--color-text-muted)]">We trained AI to help you figure that out. Our AI Agent will ask a couple of questions and then create an extremely in-depth document that gives you every detail and step to create an agent specific for a task at your company.</p>
 
-          <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
             {([
-              { value: '90%', label: 'Lower delivery costs' },
-              { value: '5×', label: 'Faster turnaround' },
-              { value: '2×', label: 'Quality uplift' },
-              { value: '24/7', label: 'Always‑on pipeline' },
-            ] as const).map((s, i) => (
-              <div key={i} className="rounded-xl border border-[var(--color-border)] bg-white p-6 text-center shadow-card">
-                <div className="text-4xl font-bold text-[var(--color-primary)]">{s.value}</div>
-                <div className="mt-2 text-sm font-medium text-[var(--color-text)]">{s.label}</div>
+              { icon: Rocket, title: 'Rapidly Deployed', desc: 'Launch AI in days, not months. Discover how our custom-built AI adapts to your business.' },
+              { icon: Cpu, title: 'Trained On You', desc: 'Your AI learns from your data - always aligned with your knowledge, never wrong.' },
+              { icon: Settings2, title: '100% AI Power', desc: 'Full access to AI capabilities—You get the raw, enterprise-grade power under your control.' },
+            ] as const).map((item, i) => (
+              <div key={i} className="rounded-xl border border-[var(--color-border)] bg-white p-8 text-center shadow-card hover:shadow-xl transition-shadow">
+                <div className="mx-auto mb-4">
+                  <IconBadge icon={item.icon} size={64} boxed />
+                </div>
+                <div className="text-lg font-semibold text-[var(--color-text)]">{item.title}</div>
+                <p className="mt-2 text-[var(--color-text-muted)]">{item.desc}</p>
               </div>
             ))}
           </div>
 
-          {/* Comparison grid from compare.csv */}
-          <ComparisonGrid />
+          {/* Secondary Benefits - 4 across */}
+          <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {([
+              { icon: PackageCheck, title: 'Zero Hallucination', desc: 'Our models are trained on your data, ensuring answers are precise and free from hallucinations.' },
+              { icon: ShieldIcon, title: 'Private & Owned', desc: 'Your AI, your rules. We build secure systems where you own the data and the models.' },
+              { icon: Globe, title: 'Integrates Anywhere', desc: 'From CRMs to legacy systems, our AI solutions are built to connect with your stack instantly.' },
+              { icon: Sparkles, title: 'Future Ready', desc: 'Designed for what\'s next—scalable AI built to evolve with your business goals.' },
+            ] as const).map((item, i) => (
+              <div key={i} className="flex flex-col items-center rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card hover:shadow-lg transition-shadow">
+                <div className="mb-3">
+                  <IconBadge icon={item.icon as any} size={56} />
+                </div>
+                <div className="text-base font-semibold text-[var(--color-text)] text-center">{item.title}</div>
+                <p className="mt-2 text-sm text-[var(--color-text-muted)] text-center">{item.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
