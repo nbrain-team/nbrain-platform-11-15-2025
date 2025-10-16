@@ -4982,16 +4982,16 @@ app.post('/roadmap/snapshots', auth(), async (req, res) => {
 // Get roadmap for advisor viewing a client's roadmap
 app.get('/advisor/clients/:clientId/roadmap', auth('advisor'), async (req, res) => {
   try {
-    const clientId = req.params.clientId;
+    const clientId = Number(req.params.clientId);
     
-    // Check if advisor has access to this client
+    // Check if advisor has access to this client via advisor_clients table
     const access = await pool.query(
-      'SELECT c.id FROM clients c WHERE c.id = $1 AND c.advisor_id = $2',
-      [clientId, req.user.id]
+      'SELECT 1 FROM advisor_clients WHERE advisor_id = $1 AND client_id = $2',
+      [req.user.id, clientId]
     );
     
     if (access.rowCount === 0) {
-      return res.status(403).json({ ok: false, error: 'Access denied' });
+      return res.status(403).json({ ok: false, error: 'Access denied - you are not assigned to this client' });
     }
     
     // Get client's roadmap
@@ -5001,10 +5001,21 @@ app.get('/advisor/clients/:clientId/roadmap', auth('advisor'), async (req, res) 
     );
     
     if (config.rowCount === 0) {
-      return res.json({ ok: true, roadmap: null });
+      // No roadmap yet - create default one
+      await createDefaultEcosystem(clientId);
+      
+      // Fetch the newly created config
+      const newConfig = await pool.query(
+        'SELECT * FROM ai_roadmap_configs WHERE user_id = $1 AND is_default = true LIMIT 1',
+        [clientId]
+      );
+      
+      if (newConfig.rowCount === 0) {
+        return res.json({ ok: true, roadmap: null });
+      }
     }
     
-    const configData = config.rows[0];
+    const configData = config.rowCount > 0 ? config.rows[0] : (await pool.query('SELECT * FROM ai_roadmap_configs WHERE user_id = $1 AND is_default = true LIMIT 1', [clientId])).rows[0];
     const nodes = await pool.query('SELECT * FROM roadmap_nodes WHERE roadmap_config_id = $1', [configData.id]);
     const edges = await pool.query('SELECT * FROM roadmap_edges WHERE roadmap_config_id = $1', [configData.id]);
     const departments = await pool.query('SELECT * FROM roadmap_departments WHERE roadmap_config_id = $1', [configData.id]);
