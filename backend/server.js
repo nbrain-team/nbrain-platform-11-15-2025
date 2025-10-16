@@ -4594,24 +4594,41 @@ async function createDefaultEcosystem(userId) {
     const configId = newConfig.rows[0].id;
     
     // Create default category nodes matching the standard layout
+    const brainDescription = 'The Brain is your centralized AI intelligence — a smart, evolving core that powers every module within your ecosystem, both now and in the future. It acts as the AI backend that connects, coordinates, and amplifies all components of your system. The Brain is fully owned by you, continuously learning and adapting with every interaction. It\'s designed to be completely portable, allowing you to take your intelligence anywhere — seamlessly integrated within nBrain or beyond it.';
+    
     const defaultCategories = [
-      { name: 'The Brain', x: 600, y: 350, description: 'The Brain is your centralized AI intelligence — a smart, evolving core that powers every module within your ecosystem, both now and in the future. It acts as the AI backend that connects, coordinates, and amplifies all components of your system.\n\nThe Brain is fully owned by you, continuously learning and adapting with every interaction. It\'s designed to be completely portable, allowing you to take your intelligence anywhere — seamlessly integrated within nBrain or beyond it.', color: '#9333EA' },
-      // Left side categories
-      { name: 'Sales', x: 350, y: 200, description: 'Sales AI initiatives', color: '#EC4899' },
-      { name: 'Marketing', x: 350, y: 350, description: 'Marketing AI initiatives', color: '#F59E0B' },
-      { name: 'HR', x: 350, y: 500, description: 'HR AI initiatives', color: '#10B981' },
-      // Right side categories
-      { name: 'Operations', x: 850, y: 200, description: 'Operations AI initiatives', color: '#3B82F6' },
-      { name: 'Finance', x: 850, y: 350, description: 'Finance AI initiatives', color: '#3B82F6' },
-      { name: 'Other', x: 850, y: 500, description: 'Other AI initiatives', color: '#6B7280' },
+      { name: 'The Brain', x: 600, y: 350, description: brainDescription, color: '#9333EA' },
+      // Left side categories (no descriptions)
+      { name: 'Sales / Marketing', x: 150, y: 100, description: '', color: '#6B7280' },
+      { name: 'Human Resources', x: 150, y: 400, description: '', color: '#6B7280' },
+      // Right side categories (no descriptions)
+      { name: 'Company Opps', x: 1050, y: 100, description: '', color: '#6B7280' },
+      { name: 'Financial', x: 1050, y: 400, description: '', color: '#6B7280' },
+      // Bottom
+      { name: 'Other', x: 600, y: 600, description: '', color: '#6B7280' },
     ];
     
+    const nodeIds = {};
     for (const cat of defaultCategories) {
-      await pool.query(
+      const result = await pool.query(
         `INSERT INTO roadmap_nodes (roadmap_config_id, node_type, title, description, position_x, position_y, category, is_category)
-         VALUES ($1, 'category', $2, $3, $4, $5, $2, true)`,
+         VALUES ($1, 'category', $2, $3, $4, $5, $2, true)
+         RETURNING id`,
         [configId, cat.name, cat.description, cat.x, cat.y]
       );
+      nodeIds[cat.name] = result.rows[0].id;
+    }
+    
+    // Create connections from The Brain to all other categories
+    const brainId = nodeIds['The Brain'];
+    for (const cat of defaultCategories) {
+      if (cat.name !== 'The Brain') {
+        await pool.query(
+          `INSERT INTO roadmap_edges (roadmap_config_id, source_node_id, target_node_id, edge_type)
+           VALUES ($1, $2, $3, 'default')`,
+          [configId, brainId, nodeIds[cat.name]]
+        );
+      }
     }
     
     console.log(`Created default AI Ecosystem for user ${userId}`);
