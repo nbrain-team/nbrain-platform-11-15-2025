@@ -445,7 +445,6 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
-          </div>
           <DialogFooter>
             <button onClick={() => setEditClientOpen(false)} className="btn-secondary">Cancel</button>
             <button onClick={submitEditClient} disabled={saving} className="btn-primary">{saving ? 'Saving…' : 'Save'}</button>
