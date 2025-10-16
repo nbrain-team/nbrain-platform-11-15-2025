@@ -682,7 +682,11 @@ app.post('/admin/users', auth('admin'), async (req, res) => {
     const { role, name, email, username, password, advisorId, companyName, websiteUrl, phone } = req.body || {};
     if (!role || !name || !email || !username || !password) return res.status(400).json({ ok: false, error: 'Missing fields' });
     if (!['advisor', 'client'].includes(role)) return res.status(400).json({ ok: false, error: 'Role must be advisor or client' });
-    const r = await pool.query('insert into users(role,name,email,username,password,company_name,website_url,phone) values($1,$2,$3,$4,$5,$6,$7,$8) returning id', [role, name, email, username, password, companyName || null, websiteUrl || null, phone || null]);
+    
+    // Hash the password before storing
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const r = await pool.query('insert into users(role,name,email,username,password,company_name,website_url,phone) values($1,$2,$3,$4,$5,$6,$7,$8) returning id', [role, name, email, username, hashedPassword, companyName || null, websiteUrl || null, phone || null]);
     const id = r.rows[0].id;
     if (role === 'client' && advisorId) {
       await pool.query('insert into advisor_clients(advisor_id, client_id) values($1,$2) on conflict do nothing', [advisorId, id]);
@@ -695,6 +699,7 @@ app.post('/admin/users', auth('admin'), async (req, res) => {
     }
     res.json({ ok: true, id });
   } catch (e) {
+    console.error('Error creating user:', e);
     res.status(500).json({ ok: false, error: e.message });
   }
 });
