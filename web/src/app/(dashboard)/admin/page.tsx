@@ -329,6 +329,7 @@ export default function AdminPage() {
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Add {addRole === 'client' ? 'client' : 'advisor'}</DialogTitle>
+            <p className="text-sm text-[var(--color-text-muted)]">Create a new {addRole === 'client' ? 'client' : 'advisor'} account</p>
           </DialogHeader>
           <div className="grid grid-cols-1 gap-3 text-sm">
             <div className="grid grid-cols-2 items-center gap-2">
@@ -369,6 +370,7 @@ export default function AdminPage() {
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Edit Client</DialogTitle>
+            <p className="text-sm text-[var(--color-text-muted)]">Update client information and advisor assignments</p>
           </DialogHeader>
           <div className="grid grid-cols-1 gap-3 text-sm">
             <div className="grid grid-cols-2 items-center gap-2">
