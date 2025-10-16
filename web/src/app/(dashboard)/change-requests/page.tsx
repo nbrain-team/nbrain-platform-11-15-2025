@@ -23,6 +23,7 @@ type ChangeRequestTask = {
 type Project = {
   id: number
   name: string
+  client_id?: number
 }
 
 export default function ChangeRequestsPage() {
@@ -37,6 +38,9 @@ export default function ChangeRequestsPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
   const [customProjectName, setCustomProjectName] = useState("")
   const [projectUrl, setProjectUrl] = useState("")
+  const [clients, setClients] = useState<{id: number, name: string}[]>([])
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null)
+  const [isAdvisor, setIsAdvisor] = useState(false)
   
   // Add task form
   const [moduleName, setModuleName] = useState("")
@@ -50,6 +54,29 @@ export default function ChangeRequestsPage() {
   }, [])
 
   useEffect(() => {
+    // Check if advisor
+    const token = typeof window !== 'undefined' ? localStorage.getItem('xsourcing_token') : null
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        setIsAdvisor(payload.role === 'advisor')
+        
+        // Load clients if advisor
+        if (payload.role === 'advisor') {
+          fetch(`${api}/advisor/clients`, { headers: authHeaders })
+            .then(r => r.json())
+            .then(data => {
+              if (data.ok && data.clients) {
+                setClients(data.clients)
+              }
+            })
+            .catch(console.error)
+        }
+      } catch (e) {
+        console.error('Failed to decode token:', e)
+      }
+    }
+    
     loadRequests()
     loadProjects()
   }, [])
@@ -84,7 +111,13 @@ export default function ChangeRequestsPage() {
 
   const createRequest = async () => {
     try {
-      const projectName = useExistingProject && selectedProjectId
+      // For advisors, client is required
+      if (isAdvisor && !selectedClientId) {
+        alert('Please select a client')
+        return
+      }
+      
+      const projectName = selectedProjectId
         ? projects.find(p => p.id === selectedProjectId)?.name
         : customProjectName
 
@@ -97,9 +130,10 @@ export default function ChangeRequestsPage() {
         method: 'POST',
         headers: authHeaders,
         body: JSON.stringify({
-          projectId: useExistingProject ? selectedProjectId : null,
+          projectId: selectedProjectId || null,
           projectName,
-          projectUrl
+          projectUrl,
+          clientId: isAdvisor ? selectedClientId : null
         })
       }).then(r => r.json())
 
@@ -111,11 +145,17 @@ export default function ChangeRequestsPage() {
         setSelectedProjectId(null)
         setCustomProjectName("")
         setProjectUrl("")
+        setSelectedClientId(null)
       }
     } catch (e) {
       console.error('Failed to create request:', e)
     }
   }
+  
+  // Filter projects for selected client (advisor view)
+  const filteredProjects = isAdvisor && selectedClientId
+    ? projects.filter(p => p.client_id === selectedClientId)
+    : projects
 
   const loadRequestTasks = async (requestId: number) => {
     try {
@@ -357,61 +397,65 @@ export default function ChangeRequestsPage() {
           </DialogHeader>
           
           <div className="space-y-4">
-            <div>
-              <div className="flex gap-4 mb-3">
-                <button
-                  onClick={() => setUseExistingProject(true)}
-                  className={`flex-1 rounded-md border px-4 py-2 text-sm font-medium transition ${
-                    useExistingProject
-                      ? 'border-[var(--color-primary)] bg-[var(--color-primary-50)] text-[var(--color-primary)]'
-                      : 'border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
-                  }`}
+            {/* Client selector for advisors */}
+            {isAdvisor && (
+              <div>
+                <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+                  Select Client <span className="text-red-500">*</span>
+                </label>
+                <select
+                  className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                  value={selectedClientId || ''}
+                  onChange={e => setSelectedClientId(Number(e.target.value))}
                 >
-                  Existing Project
-                </button>
-                <button
-                  onClick={() => setUseExistingProject(false)}
-                  className={`flex-1 rounded-md border px-4 py-2 text-sm font-medium transition ${
-                    !useExistingProject
-                      ? 'border-[var(--color-primary)] bg-[var(--color-primary-50)] text-[var(--color-primary)]'
-                      : 'border-[var(--color-border)] hover:bg-[var(--color-surface-alt)]'
-                  }`}
-                >
-                  Custom Project
-                </button>
+                  <option value="">Choose a client...</option>
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-
-              {useExistingProject ? (
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
-                    Select Project <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
-                    value={selectedProjectId || ''}
-                    onChange={e => setSelectedProjectId(Number(e.target.value))}
-                  >
-                    <option value="">Choose a project...</option>
-                    {projects.map(p => (
-                      <option key={p.id} value={p.id}>
-                        PRJ-{String(p.id).padStart(4, '0')} - {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
-                    Project Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
-                    value={customProjectName}
-                    onChange={e => setCustomProjectName(e.target.value)}
-                    placeholder="Enter project name"
-                  />
-                </div>
-              )}
+            )}
+            
+            {/* Project selector or custom name */}
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+                Select Project (Optional)
+              </label>
+              <select
+                className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                value={selectedProjectId || ''}
+                onChange={e => {
+                  const val = e.target.value
+                  setSelectedProjectId(val ? Number(val) : null)
+                  if (val) setCustomProjectName("")
+                }}
+                disabled={isAdvisor && !selectedClientId}
+              >
+                <option value="">Or enter custom project name below...</option>
+                {filteredProjects.map(p => (
+                  <option key={p.id} value={p.id}>
+                    PRJ-{String(p.id).padStart(4, '0')} - {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">
+                Or Enter Project Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                className="w-full rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                value={customProjectName}
+                onChange={e => {
+                  setCustomProjectName(e.target.value)
+                  if (e.target.value) setSelectedProjectId(null)
+                }}
+                placeholder="Enter project name if not in list above"
+                disabled={!!selectedProjectId}
+              />
             </div>
 
             <div>
