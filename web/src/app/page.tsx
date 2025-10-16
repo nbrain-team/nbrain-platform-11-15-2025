@@ -212,95 +212,94 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="how" className="relative bg-white py-16">
+      {/* Engagement Process */}
+      <section id="process" className="relative bg-[var(--color-surface-alt)] py-16">
         <div className="container mx-auto px-6">
           <div className="text-center">
-            <h2 className="text-3xl font-semibold text-[var(--color-text)]">How Our Members Get To Work</h2>
-            <p className="mt-2 text-[var(--color-text-muted)]">A simple, advisor‑led flow that turns ideas into outcomes in days.</p>
+            <h2 className="text-3xl font-semibold text-[var(--color-text)]">Our Engagement Process</h2>
+            <p className="mt-2 text-[var(--color-text-muted)]">A Clear Path to AI Success</p>
           </div>
 
-          <div className="relative mt-8 md:mt-10">
-            {/* Curved dotted connectors between steps (desktop only) */}
-            <svg
-              className="pointer-events-none absolute inset-x-0 -top-3 hidden h-40 w-full md:block"
-              viewBox="0 0 1200 200"
-              preserveAspectRatio="none"
-            >
-              <path d="M180 120 Q 360 40 540 80" fill="none" stroke="rgba(17,17,17,0.5)" strokeWidth="2" strokeDasharray="4 8" />
-              <path d="M660 120 Q 840 180 1020 100" fill="none" stroke="rgba(17,17,17,0.5)" strokeWidth="2" strokeDasharray="4 8" />
-            </svg>
-
-            {/* Step cards simplified to icon + title, with more spacing */}
-            <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-14">
-              {([
-                { icon: MessageSquare, title: 'Tell Us About Your Project' },
-                { icon: ClipboardList, title: 'We Assess & Scope It' },
-                { icon: PlayCircle, title: 'You Sign Off & We Get To Work' },
-              ] as const).map(({ icon: Icon, title }, i) => (
-                <div key={i} className="rounded-xl border border-[var(--color-border)] bg-white p-8 text-center shadow-card">
-                  <div className="mx-auto mb-5 inline-flex items-center justify-center rounded-xl bg-[var(--color-primary-50)] p-5">
-                    <IconBadge icon={Icon} size={48} />
-                  </div>
-                  <div className="text-base font-semibold text-[var(--color-text)]">{title}</div>
-                </div>
-              ))}
-            </div>
+          <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+            {([
+              { 
+                step: 'Pre-Engagement', 
+                title: 'Pre-Engagement',
+                desc: 'Before any formal work begins, we start by identifying an opportunity that delivers fast, meaningful impact. Our goal is to define a focused, achievable MVP that proves value within 2–3 months.',
+                bullets: ['Pinpoint a high-ROI AI opportunity to tackle first', 'Collaborate to define MVP scope with mutual alignment', 'Lay the foundation for success before development begins']
+              },
+              { 
+                step: 'Step 1',
+                title: 'Strategy & Knowledge Share',
+                desc: 'With the MVP opportunity defined, we dive deep into your business to align on goals, workflows, and technical needs. This ensures the solution is designed around your reality, not assumptions.',
+                bullets: ['Conduct a collaborative business deep dive', 'Align on workflows, content needs, and security', 'Finalize all technical and strategic MVP requirements']
+              },
+              { 
+                step: 'Step 2',
+                title: 'Build Initial Proof Of Concept',
+                desc: 'We build your private, scalable AI foundation and develop your MVP solution for immediate use. By the end of this phase, your team is trained and live on your own AI platform.',
+                bullets: ['Develop a future-proof, scalable AI architecture', 'Build and deploy your custom MVP solution', 'Deliver training and handoff to activate your team']
+              },
+              { 
+                step: 'Step 3',
+                title: 'Refine, Test & Launch',
+                desc: 'Once your platform and MVP are launched, we provide a forward-looking roadmap that outlines the most valuable next steps. Whether you continue with us or go solo, you\'re ready to grow.',
+                bullets: ['Present a tailored roadmap for future AI initiatives', 'Highlight areas for increased ROI and efficiency', 'Provide a plan that evolves with your business needs']
+              },
+            ] as const).map((item, i) => (
+              <div key={i} className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card hover:shadow-xl transition-shadow">
+                <div className="mb-3 inline-block rounded-full bg-[var(--color-primary-50)] px-3 py-1 text-xs font-bold text-[var(--color-primary)]">{item.step}</div>
+                <div className="text-lg font-semibold text-[var(--color-text)] mb-3">{item.title}</div>
+                <p className="text-sm text-[var(--color-text-muted)] mb-4">{item.desc}</p>
+                <ul className="space-y-2 text-sm text-[var(--color-text-muted)]">
+                  {item.bullets.map((bullet, bi) => (
+                    <li key={bi} className="flex items-start gap-2">
+                      <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-primary)] flex-shrink-0" />
+                      <span>{bullet}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Detailed steps matching the three cards */}
-      <section className="bg-white">
-        <div className="container mx-auto space-y-10 px-6 pt-6 pb-16">
+      {/* Ways We Can Work Together */}
+      <section id="work-together" className="bg-white py-16">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-semibold text-[var(--color-text)]">Ways We Can Work Together</h2>
+          </div>
+          
+          <div className="space-y-10">
         {([
           {
-            title: 'Tell Us About Your Project',
-            image: '/image-1.png',
-            desc: 'Share goals, context, constraints, and examples. Your advisor turns intent into a clear brief.',
-            bullets: ['Links and docs welcome', 'Define what success looks like', 'Note approvals and timelines'],
+            number: '01',
+            title: 'Rapid MVP Development',
+            desc: 'We deliver a working MVP in 30–60 days, designed to solve a specific business problem with measurable outcomes. This approach gives your team a quick win and builds confidence in the power of AI. It\'s the fastest way to unlock value without committing to a full transformation upfront.',
           },
           {
-            title: 'We Assess & Scope It',
-            image: '/image-2.png',
-            desc: 'We design the fastest path to value: workflows, guardrails, QA, and milestones.',
-            bullets: ['Identify automation opportunities', 'Pick tools that fit your stack', 'Set delivery checkpoints'],
+            number: '02',
+            title: 'Advisory / Team Training',
+            desc: 'Our team provides hands-on workshops and strategic guidance to upskill your organization. We help you understand, implement, and adapt AI solutions tailored to your workflows. The result is a more confident, capable team equipped to lead future AI initiatives internally.',
           },
           {
-            title: 'You Sign Off & We Get To Work',
-            image: '/image-3.png',
-            desc: 'Production starts same‑week. AI executes with human oversight and measurable outputs.',
-            bullets: ['Track progress in your dashboard', 'Review deliverables as they land', 'Iterate quickly on feedback'],
+            number: '03',
+            title: 'Platforms / AI Transformation',
+            desc: 'We manage the entire process of AI adoption—from identifying opportunities through building and deploying scalable systems. Our team designs custom solutions that align with your business goals, security needs, and tech environment. You get a long-term, integrated AI ecosystem, not just another tool.',
           },
         ] as const).map((step, row) => (
           <div
             key={step.title}
-            className={`relative grid grid-cols-1 items-center gap-8 rounded-2xl border border-[var(--color-border)] bg-white p-6 shadow-card md:grid-cols-2 ${row % 2 ? 'md:[&>div:first-child]:order-2' : ''}`}
+            className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-8 shadow-card"
           >
-            <span className="absolute -top-4 left-6 inline-flex h-9 rounded-full bg-[var(--color-primary-50)] px-3 text-xs font-bold text-[var(--color-primary)]">
-              <span className="self-center">Step {row + 1}</span>
-            </span>
-            <div className="overflow-hidden rounded-xl">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={step.image}
-                alt={step.title}
-                className="h-64 w-full rounded-xl object-cover ring-1 ring-black/10 md:h-72"
-                style={{
-                  transform: 'none',
-                  boxShadow:
-                    '0 24px 48px rgba(16,24,40,0.25), 0 8px 16px rgba(16,24,40,0.15)',
-                }}
-              />
-            </div>
-            <div>
-              <h3 className="text-2xl font-semibold text-[var(--color-text)]">{step.title}</h3>
-              <p className="mt-2 text-[var(--color-text-muted)]">{step.desc}</p>
-              <ul className="mt-4 list-disc space-y-1 pl-6 text-[var(--color-text-muted)]">
-                {step.bullets.map((b) => (
-                  <li key={b}>{b}</li>
-                ))}
-              </ul>
+            <div className="flex items-start gap-6">
+              <div className="text-6xl font-bold text-[var(--color-primary)] opacity-20">{step.number}</div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-semibold text-[var(--color-text)]">{step.title}</h3>
+                <p className="mt-3 text-[var(--color-text-muted)] leading-relaxed">{step.desc}</p>
+              </div>
             </div>
           </div>
         ))}
@@ -321,12 +320,12 @@ export default function Home() {
 
       {/* Capabilities lists - removed per request */}
 
-      {/* Case Studies */}
-      <section className="bg-[var(--color-surface-alt)] py-16" style={{ backgroundColor: 'var(--color-surface-alt)' }}>
+      {/* Our Recent Custom AI Builds */}
+      <section id="examples" className="bg-[var(--color-surface-alt)] py-16" style={{ backgroundColor: 'var(--color-surface-alt)' }}>
         <div className="container mx-auto px-6">
           <div className="mb-8 text-center">
-            <h2 className="text-3xl font-semibold text-[var(--color-text)]">Case Studies</h2>
-            <p className="mt-2 text-[var(--color-text-muted)]">A snapshot of outcomes delivered by advisor‑led, AI‑powered production.</p>
+            <h2 className="text-3xl font-semibold text-[var(--color-text)]">Our Recent Custom AI Builds</h2>
+            <p className="mt-2 text-[var(--color-text-muted)]">Real-world AI solutions we've built for clients across industries.</p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -460,20 +459,20 @@ export default function Home() {
             <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
               {/* Logo */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/hyah-logo.png" alt="Hyah AI" className="h-10 w-auto brightness-0 invert" />
+              <img src="/nbrain-2025-logo.png" alt="nBrain" className="h-10 w-auto brightness-0 invert" />
               
               {/* Main navigation links */}
               <nav className="flex flex-wrap items-center justify-center gap-6 text-sm md:justify-start">
-                <a href="#why" className="text-white/80 hover:text-white">Why Hyah! AI</a>
-                <a href="#how" className="text-white/80 hover:text-white">How It Works</a>
-                <a href="#membership" className="text-white/80 hover:text-white">Membership Details</a>
-                <a href="#" className="text-white/80 hover:text-white">Contact Us</a>
+                <a href="#benefits" className="text-white/80 hover:text-white">Benefits</a>
+                <a href="#process" className="text-white/80 hover:text-white">Our Process</a>
+                <a href="#work-together" className="text-white/80 hover:text-white">Working With Us</a>
+                <a href="#examples" className="text-white/80 hover:text-white">Project Examples</a>
               </nav>
             </div>
             
             {/* Contact info */}
             <div className="text-sm">
-              <a href="mailto:hello@hyah.ai" className="text-white/80 hover:text-white">hello@hyah.ai</a>
+              <a href="mailto:contact@nbrain.ai" className="text-white/80 hover:text-white">contact@nbrain.ai</a>
             </div>
           </div>
           
@@ -482,7 +481,7 @@ export default function Home() {
           
           {/* Bottom section with copyright */}
           <div className="flex flex-col items-center justify-between gap-4 pt-8 text-sm md:flex-row">
-            <div className="text-white/60">© {new Date().getFullYear()} Hyah! AI, Inc. All rights reserved.</div>
+            <div className="text-white/60">© {new Date().getFullYear()} nBrain. All rights reserved.</div>
             <div className="flex items-center gap-6 text-white/60">
               <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
               <Link href="/terms" className="hover:text-white">Terms of Service</Link>
