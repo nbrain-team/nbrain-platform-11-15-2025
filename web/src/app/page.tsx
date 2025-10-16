@@ -413,24 +413,15 @@ export default function Home() {
 
       {/* Large embedded form moved to last section before footer */}
 
-      {/* Membership plans */}
-      <section id="membership" className="bg-[var(--color-primary-50)] py-16">
+      {/* Why Work With Us */}
+      <section id="why-work-with-us" className="bg-white py-16">
         <div className="container mx-auto px-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-semibold text-[var(--color-text)]">Membership</h2>
-            <p className="mt-2 text-[var(--color-text-muted)]">Pick the plan that matches your runway. Upgrade anytime as your needs grow.</p>
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-semibold text-[var(--color-text)]">Why Work With Us</h2>
+            <p className="mt-2 text-[var(--color-text-muted)]">The benefits of partnering with nBrain for your AI transformation</p>
           </div>
-          <p className="mt-4 text-center text-sm text-[var(--color-text)]">No credit card needed for signup. Invoicing will be setup once you have your onboarding call with your advisor</p>
-
-          <PricingGridFromCSV />
-
-          <div className="mt-8 text-center">
-            <button className="btn-primary" onClick={() => { setSelectedPlan(null); setSignupOpen(true); }}>Sign Up (No Credit Card Required)</button>
-          </div>
-
-          {/* Member Benefits grid (replaces details list) */}
-          <div className="mx-auto mt-10 max-w-6xl">
-            <div className="mb-6 text-center text-2xl font-semibold text-[var(--color-text)]">Member Benefits</div>
+          
+          <div className="mx-auto max-w-6xl">
             <MemberBenefitsGrid />
           </div>
         </div>
