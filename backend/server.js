@@ -4436,6 +4436,38 @@ app.put('/change-requests/:id/complete', auth(), async (req, res) => {
   }
 });
 
+// Archive request
+app.put('/change-requests/:id/archive', auth(), async (req, res) => {
+  try {
+    const requestId = Number(req.params.id);
+    
+    await pool.query(
+      'UPDATE change_requests SET archived = TRUE, updated_at = NOW() WHERE id = $1',
+      [requestId]
+    );
+    
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Unarchive request
+app.put('/change-requests/:id/unarchive', auth(), async (req, res) => {
+  try {
+    const requestId = Number(req.params.id);
+    
+    await pool.query(
+      'UPDATE change_requests SET archived = FALSE, updated_at = NOW() WHERE id = $1',
+      [requestId]
+    );
+    
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // Serve uploaded change request files
 app.get('/change-requests/files/:filename', auth(), async (req, res) => {
   try {

@@ -9,6 +9,7 @@ type ChangeRequest = {
   status: string
   created_at: string
   task_count?: number
+  archived?: boolean
 }
 
 type ChangeRequestTask = {
@@ -222,6 +223,33 @@ export default function ChangeRequestsPage() {
     }
   }
 
+  const archiveRequest = async (requestId: number) => {
+    try {
+      await fetch(`${api}/change-requests/${requestId}/archive`, {
+        method: 'PUT',
+        headers: authHeaders
+      })
+      loadRequests()
+      if (selectedRequest === requestId) {
+        setSelectedRequest(null)
+      }
+    } catch (e) {
+      console.error('Failed to archive:', e)
+    }
+  }
+
+  const unarchiveRequest = async (requestId: number) => {
+    try {
+      await fetch(`${api}/change-requests/${requestId}/unarchive`, {
+        method: 'PUT',
+        headers: authHeaders
+      })
+      loadRequests()
+    } catch (e) {
+      console.error('Failed to unarchive:', e)
+    }
+  }
+
   const downloadMarkdown = async (requestId: number) => {
     try {
       const res = await fetch(`${api}/change-requests/${requestId}/export`, {
@@ -260,34 +288,95 @@ export default function ChangeRequestsPage() {
         </button>
       </div>
 
-      {/* List of change requests */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {requests.map(request => (
-          <div
-            key={request.id}
-            className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card hover:shadow-xl transition cursor-pointer"
-            onClick={() => loadRequestTasks(request.id)}
-          >
-            <div className="flex items-start justify-between mb-2">
-              <h3 className="font-semibold text-[var(--color-text)]">{request.project_name}</h3>
-              <span className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                request.status === 'open' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
-              }`}>
-                {request.status}
-              </span>
+      {/* Active Change Requests */}
+      <div>
+        <h2 className="text-lg font-semibold text-[var(--color-text)] mb-4">Active Requests</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {requests.filter(r => !r.archived).map(request => (
+            <div
+              key={request.id}
+              className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card hover:shadow-xl transition group"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <h3 
+                  className="font-semibold text-[var(--color-text)] cursor-pointer flex-1"
+                  onClick={() => loadRequestTasks(request.id)}
+                >
+                  {request.project_name}
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                    request.status === 'open' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
+                  }`}>
+                    {request.status}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      archiveRequest(request.id)
+                    }}
+                    className="opacity-0 group-hover:opacity-100 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition"
+                    title="Archive"
+                  >
+                    Archive
+                  </button>
+                </div>
+              </div>
+              <div className="text-xs text-[var(--color-text-muted)]">
+                {new Date(request.created_at).toLocaleDateString()}
+              </div>
             </div>
-            <div className="text-xs text-[var(--color-text-muted)]">
-              {new Date(request.created_at).toLocaleDateString()}
+          ))}
+          
+          {requests.filter(r => !r.archived).length === 0 && (
+            <div className="col-span-full rounded-xl border-2 border-dashed border-[var(--color-border)] p-12 text-center text-[var(--color-text-muted)]">
+              No active change requests. Click "Create New Request" to get started.
             </div>
-          </div>
-        ))}
-        
-        {requests.length === 0 && (
-          <div className="col-span-full rounded-xl border-2 border-dashed border-[var(--color-border)] p-12 text-center text-[var(--color-text-muted)]">
-            No change requests yet. Click "Create New Request" to get started.
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {/* Archived Requests */}
+      {requests.filter(r => r.archived).length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold text-[var(--color-text)] mb-4">Archived Requests</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {requests.filter(r => r.archived).map(request => (
+              <div
+                key={request.id}
+                className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-alt)] p-6 shadow-card opacity-75 hover:opacity-100 transition group"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <h3 
+                    className="font-semibold text-[var(--color-text)] cursor-pointer flex-1"
+                    onClick={() => loadRequestTasks(request.id)}
+                  >
+                    {request.project_name}
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-700">
+                      Archived
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        unarchiveRequest(request.id)
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition"
+                      title="Unarchive"
+                    >
+                      Unarchive
+                    </button>
+                  </div>
+                </div>
+                <div className="text-xs text-[var(--color-text-muted)]">
+                  {new Date(request.created_at).toLocaleDateString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Selected request - task management */}
       {selectedRequest && (
