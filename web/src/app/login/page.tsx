@@ -48,7 +48,6 @@ export default function LoginPage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/hyah-logo.png" alt="Hyah! AI" className="mx-auto mb-6 h-12 w-auto" />
         <h1 className="text-center text-2xl font-semibold text-[var(--color-text)]">Sign in</h1>
-        <p className="mt-2 text-center text-sm text-[var(--color-text-muted)]">Use admin/admin, advisor/advisor, or client/client.</p>
         <form onSubmit={submit} className="mt-6 grid grid-cols-1 gap-3">
           <input className="rounded-md border border-[var(--color-border)] px-3 py-2" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
           <input className="rounded-md border border-[var(--color-border)] px-3 py-2" placeholder="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
