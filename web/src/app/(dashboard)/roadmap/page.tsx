@@ -127,6 +127,12 @@ export default function RoadmapPage() {
       
       console.log('Roadmap API response:', data)
       
+      if (!data.ok) {
+        console.error('Roadmap API error:', data.error)
+        setLoading(false)
+        return
+      }
+      
       if (data.ok && data.roadmap) {
           setRoadmapData(data.roadmap)
           
@@ -178,8 +184,12 @@ export default function RoadmapPage() {
 
   // Load roadmap data on mount and when selected client changes
   useEffect(() => {
+    console.log('Effect triggered:', { userRole, selectedClientId })
     if (userRole === 'client' || (userRole === 'advisor' && selectedClientId)) {
+      console.log('Loading roadmap...')
       loadRoadmap()
+    } else {
+      console.log('Not loading roadmap:', { userRole, selectedClientId })
     }
   }, [userRole, selectedClientId, loadRoadmap])
   
