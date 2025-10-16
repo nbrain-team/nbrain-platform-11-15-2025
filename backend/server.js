@@ -897,6 +897,55 @@ app.get('/advisor/clients', auth('advisor'), async (req, res) => {
   }
 });
 
+// Advisor creates a new client and is automatically assigned to them
+app.post('/advisor/clients', auth('advisor'), async (req, res) => {
+  try {
+    const { name, email, username, password, companyName, websiteUrl } = req.body || {};
+    if (!name || !email || !username || !password) {
+      return res.status(400).json({ ok: false, error: 'Name, email, username, and password are required' });
+    }
+    
+    // Hash the password before storing
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Check if username or email already exists
+    const existing = await pool.query('SELECT username, email FROM users WHERE username = $1 OR email = $2', [username, email]);
+    if (existing.rowCount > 0) {
+      const existingUser = existing.rows[0];
+      if (existingUser.username === username) {
+        return res.status(400).json({ ok: false, error: `Username "${username}" is already taken. Please choose a different username.` });
+      }
+      if (existingUser.email === email) {
+        return res.status(400).json({ ok: false, error: `Email "${email}" is already registered. Please use a different email.` });
+      }
+    }
+    
+    // Create the client user
+    const result = await pool.query(
+      'INSERT INTO users(role, name, email, username, password, company_name, website_url) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      ['client', name, email, username, hashedPassword, companyName || null, websiteUrl || null]
+    );
+    const clientId = result.rows[0].id;
+    
+    // Automatically assign the advisor to this client
+    await pool.query(
+      'INSERT INTO advisor_clients(advisor_id, client_id) VALUES($1, $2) ON CONFLICT DO NOTHING',
+      [req.user.id, clientId]
+    );
+    
+    // Seed predefined credentials for the client
+    await seedUserCredentials(clientId);
+    
+    // Create default AI Ecosystem
+    await createDefaultEcosystem(clientId);
+    
+    res.json({ ok: true, id: clientId });
+  } catch (e) {
+    console.error('Error creating client:', e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // Advisor aggregated communications (messages across all accessible projects)
 app.get('/advisor/messages', auth('advisor'), async (req, res) => {
   try {

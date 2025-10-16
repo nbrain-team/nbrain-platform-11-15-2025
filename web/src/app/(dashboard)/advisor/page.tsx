@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 type Client = { id: number; name: string; email: string }
 type Project = { id: number; name: string; status: string; eta: string | null }
@@ -19,6 +20,17 @@ export default function AdvisorPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [scheduleRequests, setScheduleRequests] = useState<ScheduleRequest[]>([])
   const [error, setError] = useState<string>("")
+  
+  // Add client dialog state
+  const [addClientOpen, setAddClientOpen] = useState<boolean>(false)
+  const [saving, setSaving] = useState<boolean>(false)
+  const [name, setName] = useState<string>('')
+  const [email, setEmail] = useState<string>('')
+  const [username, setUsername] = useState<string>('')
+  const [password, setPassword] = useState<string>('')
+  const [companyName, setCompanyName] = useState<string>('')
+  const [websiteUrl, setWebsiteUrl] = useState<string>('')
+  
   const api = process.env.NEXT_PUBLIC_API_BASE_URL || ""
   const authHeaders = useMemo<HeadersInit | undefined>(() => {
     const t = typeof window !== 'undefined' ? localStorage.getItem("xsourcing_token") : null
@@ -61,6 +73,57 @@ export default function AdvisorPage() {
       } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Failed loading projects') }
     })()
   }, [selected, api, authHeaders])
+
+  const openAddClient = () => {
+    setName('')
+    setEmail('')
+    setUsername('')
+    setPassword('')
+    setCompanyName('')
+    setWebsiteUrl('')
+    setError('')
+    setAddClientOpen(true)
+  }
+
+  const submitAddClient = async () => {
+    // Validate required fields
+    if (!name || !email || !username || !password) {
+      setError('Please fill in all required fields (name, email, username, password)')
+      return
+    }
+    
+    setSaving(true)
+    setError('')
+    try {
+      const res = await fetch(`${api}/advisor/clients`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(authHeaders || {}) },
+        body: JSON.stringify({
+          name,
+          email,
+          username,
+          password,
+          companyName: companyName || undefined,
+          websiteUrl: websiteUrl || undefined
+        })
+      }).then(r => r.json())
+      
+      if (!res.ok) throw new Error(res.error || 'Failed creating client')
+      
+      setAddClientOpen(false)
+      setError('')
+      
+      // Refresh clients list
+      const clientsRes = await fetch(`${api}/advisor/clients`, { headers: authHeaders }).then(r => r.json())
+      if (clientsRes.ok) {
+        setClients(clientsRes.clients)
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed creating client')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -111,7 +174,15 @@ export default function AdvisorPage() {
       )}
 
       <div className="rounded-xl border border-[var(--color-border)] bg-white p-6 shadow-card">
-        <div className="mb-3 text-lg font-semibold">Assigned Clients</div>
+        <div className="mb-3 flex items-center justify-between">
+          <div className="text-lg font-semibold">Assigned Clients</div>
+          <button 
+            onClick={openAddClient}
+            className="btn-primary text-xs px-3 py-1"
+          >
+            + Add Client
+          </button>
+        </div>
         <div className="flex flex-wrap gap-2">
           {clients.map(c => (
             <Link 
@@ -192,6 +263,84 @@ export default function AdvisorPage() {
           <div className="p-4 text-sm text-[var(--color-text-muted)]">No finished projects.</div>
         )}
       </div>
+
+      {/* Add Client Dialog */}
+      <Dialog open={addClientOpen} onOpenChange={setAddClientOpen}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Add New Client</DialogTitle>
+            <p className="text-sm text-[var(--color-text-muted)]">Create a new client account. You will be automatically assigned as their advisor.</p>
+          </DialogHeader>
+          
+          {error && (
+            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 gap-3 text-sm">
+            <div className="grid grid-cols-2 items-center gap-2">
+              <label className="text-[var(--color-text-muted)]">Full name *</label>
+              <input 
+                className="rounded-md border border-[var(--color-border)] px-3 py-2" 
+                value={name} 
+                onChange={e => setName(e.target.value)}
+                placeholder="John Doe"
+              />
+              
+              <label className="text-[var(--color-text-muted)]">Email *</label>
+              <input 
+                type="email" 
+                className="rounded-md border border-[var(--color-border)] px-3 py-2" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)}
+                placeholder="john@company.com"
+              />
+              
+              <label className="text-[var(--color-text-muted)]">Username *</label>
+              <input 
+                className="rounded-md border border-[var(--color-border)] px-3 py-2" 
+                value={username} 
+                onChange={e => setUsername(e.target.value)}
+                placeholder="johndoe"
+              />
+              
+              <label className="text-[var(--color-text-muted)]">Password *</label>
+              <input 
+                type="password" 
+                className="rounded-md border border-[var(--color-border)] px-3 py-2" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+              
+              <label className="text-[var(--color-text-muted)]">Company</label>
+              <input 
+                className="rounded-md border border-[var(--color-border)] px-3 py-2" 
+                value={companyName} 
+                onChange={e => setCompanyName(e.target.value)}
+                placeholder="Acme Corp"
+              />
+              
+              <label className="text-[var(--color-text-muted)]">Website URL</label>
+              <input 
+                className="rounded-md border border-[var(--color-border)] px-3 py-2" 
+                value={websiteUrl} 
+                onChange={e => setWebsiteUrl(e.target.value)}
+                placeholder="https://example.com"
+              />
+            </div>
+            <div className="text-xs text-[var(--color-text-muted)]">* Required fields</div>
+          </div>
+          
+          <DialogFooter>
+            <button onClick={() => setAddClientOpen(false)} className="btn-secondary">Cancel</button>
+            <button onClick={submitAddClient} disabled={saving} className="btn-primary">
+              {saving ? 'Creating…' : 'Create Client'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
