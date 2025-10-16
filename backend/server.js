@@ -509,16 +509,16 @@ async function ensureSchema() {
 // Seed predefined credentials for new users
 async function seedUserCredentials(userId) {
   const predefinedCredentials = [
-    { name: 'OpenAI Key', type: 'text' },
-    { name: 'Gemini Key', type: 'text' },
-    { name: 'Anthropic Key', type: 'text' },
-    { name: 'Google Drive Folder', type: 'text' }
+    { name: 'OpenAI Key', service: 'OpenAI', key: 'api_key', type: 'text' },
+    { name: 'Gemini Key', service: 'Google Gemini', key: 'api_key', type: 'text' },
+    { name: 'Anthropic Key', service: 'Anthropic', key: 'api_key', type: 'text' },
+    { name: 'Google Drive Folder', service: 'Google Drive', key: 'folder_url', type: 'text' }
   ];
   
   for (const cred of predefinedCredentials) {
     await pool.query(
-      'INSERT INTO credentials (user_id, name, type, is_predefined) VALUES ($1, $2, $3, TRUE) ON CONFLICT DO NOTHING',
-      [userId, cred.name, cred.type]
+      'INSERT INTO credentials (user_id, service, key, name, type, value, is_predefined) VALUES ($1, $2, $3, $4, $5, $6, TRUE) ON CONFLICT DO NOTHING',
+      [userId, cred.service, cred.key, cred.name, cred.type, '']
     );
   }
 }
