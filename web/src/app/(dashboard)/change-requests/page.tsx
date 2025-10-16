@@ -65,7 +65,17 @@ export default function ChangeRequestsPage() {
 
   const loadProjects = async () => {
     try {
-      const res = await fetch(`${api}/client/projects`, { headers: authHeaders }).then(r => r.json())
+      // Determine user role from token
+      const token = typeof window !== 'undefined' ? localStorage.getItem('xsourcing_token') : null
+      if (!token) return
+      
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      const isAdvisor = payload.role === 'advisor'
+      
+      // Use appropriate endpoint based on role
+      const endpoint = isAdvisor ? `${api}/advisor/projects` : `${api}/client/projects`
+      const res = await fetch(endpoint, { headers: authHeaders }).then(r => r.json())
+      
       if (res.ok) setProjects(res.projects)
     } catch (e) {
       console.error('Failed to load projects:', e)

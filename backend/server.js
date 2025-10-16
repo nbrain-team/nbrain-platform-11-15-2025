@@ -4221,11 +4221,34 @@ app.post('/public/reset-password', async (req, res) => {
 // Get all change requests for current user
 app.get('/change-requests', auth(), async (req, res) => {
   try {
-    const query = req.user.role === 'advisor'
-      ? 'SELECT cr.*, u.name as created_by_name FROM change_requests cr JOIN users u ON cr.created_by = u.id WHERE cr.created_by = $1 ORDER BY cr.created_at DESC'
-      : 'SELECT cr.*, u.name as created_by_name FROM change_requests cr JOIN users u ON cr.created_by = u.id JOIN projects p ON cr.project_id = p.id WHERE p.client_id = $1 ORDER BY cr.created_at DESC';
+    let query, params;
     
-    const result = await pool.query(query, [req.user.id]);
+    if (req.user.role === 'advisor') {
+      // Advisors see: their own requests + requests from their clients
+      query = `
+        SELECT DISTINCT cr.*, u.name as created_by_name 
+        FROM change_requests cr 
+        JOIN users u ON cr.created_by = u.id 
+        LEFT JOIN projects p ON cr.project_id = p.id
+        LEFT JOIN advisor_clients ac ON p.client_id = ac.client_id
+        WHERE cr.created_by = $1 OR ac.advisor_id = $1
+        ORDER BY cr.created_at DESC
+      `;
+      params = [req.user.id];
+    } else {
+      // Clients see: their own requests + requests for their projects
+      query = `
+        SELECT cr.*, u.name as created_by_name 
+        FROM change_requests cr 
+        JOIN users u ON cr.created_by = u.id 
+        LEFT JOIN projects p ON cr.project_id = p.id 
+        WHERE cr.created_by = $1 OR p.client_id = $1
+        ORDER BY cr.created_at DESC
+      `;
+      params = [req.user.id];
+    }
+    
+    const result = await pool.query(query, params);
     res.json({ ok: true, requests: result.rows });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
