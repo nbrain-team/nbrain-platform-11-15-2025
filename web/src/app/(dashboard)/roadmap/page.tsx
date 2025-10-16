@@ -57,11 +57,43 @@ export default function RoadmapPage() {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [roadmapData, setRoadmapData] = useState<{ nodes: RoadmapNode[], edges: RoadmapEdge[] }>({ nodes: [], edges: [] })
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [clients, setClients] = useState<{id: number, name: string}[]>([])
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null)
   
   const authHeaders = useMemo<HeadersInit>(() => {
     const t = typeof window !== 'undefined' ? localStorage.getItem("xsourcing_token") : null
     return t ? { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' }
   }, [])
+  
+  // Detect user role and load clients if advisor
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('xsourcing_token') : null
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        setUserRole(payload.role)
+        
+        // Load clients if advisor
+        if (payload.role === 'advisor') {
+          fetch(`${api}/advisor/clients`, { headers: authHeaders })
+            .then(r => r.json())
+            .then(data => {
+              if (data.ok && data.clients) {
+                setClients(data.clients)
+                // Auto-select first client
+                if (data.clients.length > 0) {
+                  setSelectedClientId(data.clients[0].id)
+                }
+              }
+            })
+            .catch(console.error)
+        }
+      } catch (e) {
+        console.error('Failed to decode token:', e)
+      }
+    }
+  }, [api, authHeaders])
 
   // Custom node types
   const nodeTypes: NodeTypes = useMemo(() => ({
@@ -80,10 +112,17 @@ export default function RoadmapPage() {
   const loadRoadmap = useCallback(async () => {
     try {
       setLoading(true)
-      console.log('Loading roadmap from:', `${api}/roadmap`)
+      
+      // Construct URL based on role and selected client
+      let url = `${api}/roadmap`
+      if (userRole === 'advisor' && selectedClientId) {
+        url = `${api}/advisor/clients/${selectedClientId}/roadmap`
+      }
+      
+      console.log('Loading roadmap from:', url)
       console.log('Auth headers:', authHeaders ? 'Present' : 'Missing')
       
-      const res = await fetch(`${api}/roadmap`, { headers: authHeaders })
+      const res = await fetch(url, { headers: authHeaders })
       const data = await res.json()
       
       console.log('Roadmap API response:', data)
@@ -137,10 +176,12 @@ export default function RoadmapPage() {
     }
   }, [api, authHeaders, setNodes, setEdges])
 
-  // Load roadmap data on mount
+  // Load roadmap data on mount and when selected client changes
   useEffect(() => {
-    loadRoadmap()
-  }, [loadRoadmap])
+    if (userRole === 'client' || (userRole === 'advisor' && selectedClientId)) {
+      loadRoadmap()
+    }
+  }, [userRole, selectedClientId, loadRoadmap])
   
   // Reload when returning from chat (check URL param)
   useEffect(() => {
@@ -437,10 +478,33 @@ export default function RoadmapPage() {
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-[var(--color-text)]">Your AI Ecosystem</h1>
-          <p className="text-[var(--color-text-muted)]">Visual strategy map of your AI adoption journey</p>
+        <div className="flex-1">
+          <h1 className="text-2xl font-semibold text-[var(--color-text)]">
+            {userRole === 'advisor' ? 'Client AI Ecosystems' : 'Your AI Ecosystem'}
+          </h1>
+          <p className="text-[var(--color-text-muted)]">
+            {userRole === 'advisor' ? 'View and manage client roadmaps' : 'Visual strategy map of your AI adoption journey'}
+          </p>
         </div>
+        
+        {/* Client selector for advisors */}
+        {userRole === 'advisor' && clients.length > 0 && (
+          <div className="mx-4">
+            <label className="block text-sm font-medium text-[var(--color-text-muted)] mb-1">Select Client</label>
+            <select
+              className="rounded-md border border-[var(--color-border)] px-4 py-2 text-sm min-w-[200px]"
+              value={selectedClientId || ''}
+              onChange={e => setSelectedClientId(Number(e.target.value))}
+            >
+              {clients.map(client => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        
         <button className="btn-primary" onClick={() => setShowAddModal(true)}>
           Add Node
         </button>
