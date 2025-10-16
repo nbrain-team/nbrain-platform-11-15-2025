@@ -8,6 +8,7 @@ type ClientDetails = User & {
   website_url?: string; 
   phone?: string;
   advisor?: { id: number; name: string; email: string; phone?: string } | null;
+  advisors?: { id: number; name: string; email: string; phone?: string }[];
 }
 type AdvisorRequest = {
   id: number;
@@ -46,7 +47,8 @@ export default function AdminPage() {
   const [editCompanyName, setEditCompanyName] = useState<string>('')
   const [editWebsiteUrl, setEditWebsiteUrl] = useState<string>('')
   const [editPhone, setEditPhone] = useState<string>('')
-  const [editAdvisorId, setEditAdvisorId] = useState<string>('')
+  const [editAdvisorIds, setEditAdvisorIds] = useState<number[]>([])
+  const [newAdvisorId, setNewAdvisorId] = useState<string>('')
   
   const api = process.env.NEXT_PUBLIC_API_BASE_URL || ""
   const authHeaders = useMemo<HeadersInit | undefined>(() => {
@@ -114,7 +116,15 @@ export default function AdminPage() {
       setEditCompanyName(client.company_name || '')
       setEditWebsiteUrl(client.website_url || '')
       setEditPhone(client.phone || '')
-      setEditAdvisorId(client.advisor?.id ? String(client.advisor.id) : '')
+      
+      // Get assigned advisors for this client
+      const advisorsRes = await fetch(`${api}/admin/clients/${clientId}/advisors`, { headers: authHeaders }).then(r => r.json())
+      if (advisorsRes.ok && advisorsRes.advisors) {
+        setEditAdvisorIds(advisorsRes.advisors.map((a: User) => a.id))
+      } else {
+        setEditAdvisorIds([])
+      }
+      
       setEditClientOpen(true)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed loading client details')
@@ -125,6 +135,7 @@ export default function AdminPage() {
     if (!editingClient) return
     setSaving(true)
     try {
+      // Update client profile
       const res = await fetch(`${api}/admin/clients/${editingClient.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...(authHeaders || {}) },
@@ -134,16 +145,36 @@ export default function AdminPage() {
           username: editUsername,
           companyName: editCompanyName,
           websiteUrl: editWebsiteUrl,
-          phone: editPhone,
-          advisorId: editAdvisorId ? Number(editAdvisorId) : null
+          phone: editPhone
         })
       }).then(r => r.json())
       if (!res.ok) throw new Error(res.error || 'Failed updating client')
+      
+      // Update advisor assignments
+      await fetch(`${api}/admin/clients/${editingClient.id}/advisors`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...(authHeaders || {}) },
+        body: JSON.stringify({ advisorIds: editAdvisorIds })
+      })
+      
       setEditClientOpen(false)
       await fetchLists()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed updating client')
     } finally { setSaving(false) }
+  }
+  
+  const addAdvisorToClient = () => {
+    if (!newAdvisorId) return
+    const advisorIdNum = Number(newAdvisorId)
+    if (!editAdvisorIds.includes(advisorIdNum)) {
+      setEditAdvisorIds([...editAdvisorIds, advisorIdNum])
+    }
+    setNewAdvisorId('')
+  }
+  
+  const removeAdvisorFromClient = (advisorId: number) => {
+    setEditAdvisorIds(editAdvisorIds.filter(id => id !== advisorId))
   }
 
   const assignClient = async () => {
@@ -353,19 +384,65 @@ export default function AdminPage() {
               <input className="rounded-md border border-[var(--color-border)] px-3 py-2" value={editWebsiteUrl} onChange={e=>setEditWebsiteUrl(e.target.value)} />
               <label className="text-[var(--color-text-muted)]">Phone</label>
               <input className="rounded-md border border-[var(--color-border)] px-3 py-2" value={editPhone} onChange={e=>setEditPhone(e.target.value)} />
-              <label className="text-[var(--color-text-muted)]">Assigned Advisor</label>
-              <select className="rounded-md border border-[var(--color-border)] px-3 py-2" value={editAdvisorId} onChange={e=>setEditAdvisorId(e.target.value)}>
-                <option value="">— None —</option>
-                {advisors.map(a => <option key={a.id} value={String(a.id)}>{a.name} (#{a.id})</option>)}
-              </select>
             </div>
-            {editingClient?.advisor && (
-              <div className="mt-2 p-3 bg-[var(--color-surface-alt)] rounded-md">
-                <p className="text-xs text-[var(--color-text-muted)]">Currently assigned to:</p>
-                <p className="text-sm font-medium">{editingClient.advisor.name}</p>
-                <p className="text-xs text-[var(--color-text-muted)]">{editingClient.advisor.email}</p>
+            
+            {/* Assigned Advisors Section */}
+            <div className="mt-4 p-4 bg-[var(--color-surface-alt)] rounded-lg">
+              <div className="mb-3 text-sm font-semibold text-[var(--color-text)]">Assigned Advisors</div>
+              
+              {/* Current advisors */}
+              <div className="space-y-2 mb-3">
+                {editAdvisorIds.length === 0 ? (
+                  <div className="text-xs text-[var(--color-text-muted)]">No advisors assigned yet</div>
+                ) : (
+                  editAdvisorIds.map(advisorId => {
+                    const advisor = advisors.find(a => a.id === advisorId)
+                    if (!advisor) return null
+                    return (
+                      <div key={advisorId} className="flex items-center justify-between p-2 bg-white rounded border border-[var(--color-border)]">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{advisor.name}</div>
+                          <div className="text-xs text-[var(--color-text-muted)]">{advisor.email}</div>
+                        </div>
+                        <button
+                          onClick={() => removeAdvisorFromClient(advisorId)}
+                          className="text-xs text-red-600 hover:text-red-700 font-medium ml-2"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )
+                  })
+                )}
               </div>
-            )}
+              
+              {/* Add new advisor */}
+              <div className="flex gap-2">
+                <select 
+                  className="flex-1 rounded-md border border-[var(--color-border)] px-3 py-2 text-sm"
+                  value={newAdvisorId}
+                  onChange={e => setNewAdvisorId(e.target.value)}
+                >
+                  <option value="">Select advisor to add...</option>
+                  {advisors
+                    .filter(a => !editAdvisorIds.includes(a.id))
+                    .map(a => (
+                      <option key={a.id} value={String(a.id)}>
+                        {a.name} (#{a.id})
+                      </option>
+                    ))
+                  }
+                </select>
+                <button
+                  onClick={addAdvisorToClient}
+                  disabled={!newAdvisorId}
+                  className="btn-secondary text-xs px-4"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </div>
           </div>
           <DialogFooter>
             <button onClick={() => setEditClientOpen(false)} className="btn-secondary">Cancel</button>
